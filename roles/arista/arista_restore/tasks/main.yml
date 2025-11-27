@@ -1,0 +1,15 @@
+- name: 📂 Chercher la dernière config de backup pour {{ inventory_hostname }}
+  find:
+    path: "{{ playbook_dir }}/../backups/{{ inventory_hostname }}"
+    patterns: "config-*.conf"
+    age_stamp: mtime
+  register: saved_configs
+
+- name: 🕘 Prendre la plus récente
+  set_fact:
+    last_backup: "{{ (saved_configs.files | sort(attribute='mtime'))[-1].path }}"
+
+- name: ♻️ Restaurer la dernière configuration sauvegardée
+  eos_config:
+    src: "{{ last_backup }}"
+    replace: config

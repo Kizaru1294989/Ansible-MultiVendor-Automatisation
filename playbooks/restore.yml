@@ -1,0 +1,5 @@
+- name: ♻️ Restauration des configurations Arista
+  hosts: arista
+  gather_facts: no
+  roles:
+    - arista/arista_restore

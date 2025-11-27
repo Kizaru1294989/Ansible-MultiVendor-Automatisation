@@ -1,0 +1,41 @@
+! Command: show running-config
+! device: {{ hostname }} (vEOS-lab)
+
+boot system flash:/vEOS-lab.swi
+
+enable password sha512 $6$LqGyROaoV5iZaIck$dPqC6nkD2NrohZEBa3IKRJA73BauIn4ediXlH18weQ3ApfTLCO7YE2kRixo9iWyMAgI7tBTK1wRAm90/kUboX.
+no aaa root
+
+username admin privilege 15 role network-admin secret sha512 $6$do7FYHkgRFmMviTk$nBSDUW/oy8EBo4qY1TWoF.XntExs3qyop/AJlD.qmyH11..Dc6iMmdG8x.ShYTJS1E97jeIKVjm7vyPigPfdg/
+username scp privilege 15 shell /bin/bash secret sha512 $6$5wgDdqbVId68Wr3H$SkH/PcsbKOcXZIXXsmeoDIv17cK77oTQifzDNGV3AOKjA9XmNWfNtGUd09gCRmYJISeF9AI86AImLdfGbB4En/
+
+transceiver qsfp default-mode 4x10G
+
+service routing protocols model multi-agent
+
+hostname {{ hostname }}
+
+vrf instance managment
+
+management api http-commands
+   protocol http
+   no shutdown
+   vrf managment
+      no shutdown
+
+aaa authentication login console local
+aaa authorization exec default local
+
+{% for i in range(1, 9) %}
+interface Ethernet{{ i }}
+{% endfor %}
+
+interface Management1
+   vrf managment
+   ip address {{ mgmt_ip }}/24
+
+ip routing
+no ip routing vrf managment
+ip route vrf managment 0.0.0.0/0 {{ mgmt_gateway }}
+
+end

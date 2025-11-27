@@ -1,0 +1,6 @@
+hostname: coeur2
+mlag_vlan: 4094
+mlag_ip: 172.16.56.1
+mlag_peer_ip: 172.16.56.0
+mlag_peer_name: LEAF
+mlag_netmask: 31

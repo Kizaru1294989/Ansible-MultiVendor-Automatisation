@@ -1,0 +1,25 @@
+vlan {{ mlag_vlan }}
+  trunk group MLAGPEER
+
+interface Ethernet1
+  description MLAG - PEER LINK - {{ mlag_peer_name }}
+  channel-group 10 mode active
+
+interface Ethernet2
+  description MLAG - PEER LINK - {{ mlag_peer_name }}
+  channel-group 10 mode active
+
+interface Port-Channel10
+  description MLAG - PEER LINK - {{ mlag_peer_name }}
+  switchport mode trunk
+  switchport trunk group MLAGPEER
+
+interface Vlan{{ mlag_vlan }}
+  description MLAG PEER LINK - {{ mlag_peer_name }}
+  ip address {{ mlag_ip }}/{{ mlag_netmask }}
+
+mlag configuration
+  domain-id MLAG{{ mlag_vlan }}
+  local-interface Vlan{{ mlag_vlan }}
+  peer-address {{ mlag_peer_ip }}
+  peer-link Port-Channel10
