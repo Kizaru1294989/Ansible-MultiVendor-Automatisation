@@ -1,6 +1,6 @@
 [arista]
-coeur1 ansible_host=192.168.28.150 mgmt_ip=192.168.28.150 hostname=coeur1 mlag_ip=200.0.0.0 mlag_peer_ip=200.0.0.1
-coeur2 ansible_host=192.168.28.151 mgmt_ip=192.168.28.151 hostname=coeur2 mlag_ip=200.0.0.1 mlag_peer_ip=200.0.0.0
+coeur1 ansible_host=192.168.28.150 mgmt_ip=192.168.28.150 hostname=coeur1 mlag_ip=100.0.0.0 mlag_peer_ip=100.0.0.1
+coeur2 ansible_host=192.168.28.151 mgmt_ip=192.168.28.151 hostname=coeur2 mlag_ip=100.0.0.1 mlag_peer_ip=100.0.0.0
 
 [arista:vars]
 ansible_user=admin
@@ -10,8 +10,3 @@ ansible_network_os=eos
 ansible_httpapi_use_ssl=true
 ansible_httpapi_validate_certs=false
 ansible_httpapi_port=443
-
-mgmt_gateway=192.168.28.254
-mlag_vlan=4000
-mlag_peer_name=LAG
-mlag_netmask=31

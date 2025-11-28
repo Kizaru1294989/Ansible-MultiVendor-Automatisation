@@ -1,0 +1,4 @@
+mgmt_gateway: 192.168.28.254
+mlag_vlan: 20
+mlag_peer_name: lag
+mlag_netmask: 31
