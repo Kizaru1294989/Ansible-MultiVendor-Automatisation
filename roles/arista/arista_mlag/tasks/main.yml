@@ -1,39 +1,35 @@
-- name: 💾 Sauvegarder la configuration actuelle
+- name: Sauvegarder la configuration actuelle
   eos_command:
     commands: "show running-config"
   register: backup_config
 
-- name: 📁 Créer le dossier backup s'il n'existe pas
+- name: Créer le dossier backup s'il n'existe pas
   file:
     path: "{{ playbook_dir }}/../backups/{{ inventory_hostname }}"
     state: directory
     mode: '0755'
   delegate_to: localhost
 
-- name: 🗄️ Sauvegarder localement dans backups/{{ inventory_hostname }}
+- name: Sauvegarder localement dans backups/{{ inventory_hostname }}
   copy:
     content: "{{ backup_config.stdout[0] | default('') }}"
     dest: "{{ playbook_dir }}/../backups/{{ inventory_hostname }}/config-{{ lookup('pipe', 'date +%Y%m%dT%H%M%S') }}.conf"
   delegate_to: localhost
 
-- name: ⚙️ Générer la config MLAG
+- name: Générer la config MLAG
   template:
     src: eos_config.j2
     dest: "/tmp/{{ inventory_hostname }}-mlag.conf"
 
-- name: 📦 Appliquer la config sur le switch
+- name: Appliquer la config sur le switch
   eos_config:
     src: "/tmp/{{ inventory_hostname }}-mlag.conf"
 
-- name: ⏳ Pause de 2 secondes avant de vérifier le status MLAG
-  pause:
-    seconds: 2
-
-- name: 📡 Vérifier le status MLAG
+- name: Vérifier le status MLAG
   eos_command:
     commands: show mlag
   register: mlag_output
 
-- name: 🖨️ Afficher la sortie MLAG
+- name: Afficher la sortie MLAG
   debug:
     var: mlag_output.stdout_lines
