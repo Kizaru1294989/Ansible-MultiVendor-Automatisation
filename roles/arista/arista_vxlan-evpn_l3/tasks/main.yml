@@ -1,0 +1,52 @@
+- name: Déploiement MLAG BGP VXLAN EVPN
+  tags: evpn
+  block:
+    - name: Générer la config MLAG BGP VXLAN EVPN L3
+      template:
+        src: >-
+          {{ 'spine_eos_config.j2' if 'spines' in group_names else
+             'host_eos_config.j2'  if 'hosts' in group_names else
+             'leaf_eos_config.j2' }}
+        dest: "/tmp/{{ inventory_hostname }}-evpn.conf"
+
+    - name: Appliquer la config VXLAN EVPN
+      eos_config:
+        src: "/tmp/{{ inventory_hostname }}-evpn.conf"
+
+    - name: Attendre la convergence MLAG
+      pause:
+        seconds: 10
+      when: "'leafs' in group_names"
+
+    - name: Vérifier le status MLAG
+      eos_command:
+        commands: show mlag
+      register: mlag_output
+      when: "'leafs' in group_names"
+
+    - name: Afficher la sortie MLAG
+      debug:
+        var: mlag_output.stdout_lines
+      when: "'leafs' in group_names"
+
+    - name: Vérifier le status BGP
+      eos_command:
+        commands: show bgp summary
+      register: bgp_output
+      when: "'hosts' not in group_names"
+
+    - name: Afficher la sortie BGP
+      debug:
+        var: bgp_output.stdout_lines
+      when: "'hosts' not in group_names"
+
+    - name: Vérifier le status VXLAN EVPN
+      eos_command:
+        commands: show vxlan address-table
+      register: evpn_output
+      when: "'hosts' not in group_names"
+
+    - name: Afficher la sortie VXLAN EVPN
+      debug:
+        var: evpn_output.stdout_lines
+      when: "'hosts' not in group_names"

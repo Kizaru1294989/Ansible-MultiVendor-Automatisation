@@ -1,10 +1,25 @@
-[arista]
-coeur1 ansible_host=192.168.28.150 mgmt_ip=192.168.28.150 hostname=coeur1 mlag_ip=100.0.0.0 mlag_peer_ip=100.0.0.1
-coeur2 ansible_host=192.168.28.151 mgmt_ip=192.168.28.151 hostname=coeur2 mlag_ip=100.0.0.1 mlag_peer_ip=100.0.0.0
+[spines]
+spine1 ansible_host=192.168.28.20 mgmt_ip=192.168.28.20
+spine2 ansible_host=192.168.28.21 mgmt_ip=192.168.28.21
+
+[leafs]
+leaf1 ansible_host=192.168.28.22 mgmt_ip=192.168.28.22
+leaf2 ansible_host=192.168.28.23 mgmt_ip=192.168.28.23
+leaf3 ansible_host=192.168.28.24 mgmt_ip=192.168.28.24
+leaf4 ansible_host=192.168.28.25 mgmt_ip=192.168.28.25
+
+[hosts]
+host1 ansible_host=192.168.28.26 mgmt_ip=192.168.28.26
+host2 ansible_host=192.168.28.27 mgmt_ip=192.168.28.27
+
+[arista:children]
+spines
+leafs
+hosts
 
 [arista:vars]
-ansible_user=admin
-ansible_password=admin
+ansible_user=cvpadmin
+ansible_password=Exaprobe1234
 ansible_connection=httpapi
 ansible_network_os=eos
 ansible_httpapi_use_ssl=true

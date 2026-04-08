@@ -1,0 +1,12 @@
+!
+interface Port-Channel{{ po_id }}
+   no switchport
+   ip address {{ po_ip }}
+!
+interface Ethernet{{ eth_po_first }}
+   channel-group {{ po_id }} mode active
+!
+interface Ethernet{{ eth_po_second }}
+   channel-group {{ po_id }} mode active
+!
+{{ route }}

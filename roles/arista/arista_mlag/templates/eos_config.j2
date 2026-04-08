@@ -1,25 +1,26 @@
+{% set h = host_config[inventory_hostname] %}
 vlan {{ mlag_vlan }}
-  trunk group MLAGPEER
-
-interface Ethernet1
-  description MLAG - PEER LINK - {{ mlag_peer_name }}
-  channel-group 10 mode active
-
-interface Ethernet2
-  description MLAG - PEER LINK - {{ mlag_peer_name }}
-  channel-group 10 mode active
-
-interface Port-Channel10
-  description MLAG - PEER LINK - {{ mlag_peer_name }}
-  switchport mode trunk
-  switchport trunk group MLAGPEER
-
+   trunk group {{ trunk_group_name }}
+!
+interface Ethernet{{ mlag_peer_first_eth_int }}
+   description MLAG - PEER LINK - {{ mlag_peer_name }}
+   channel-group {{ mlag_channel_group }} mode active
+!
+interface Ethernet{{ mlag_peer_second_eth_int }}
+   description MLAG - PEER LINK - {{ mlag_peer_name }}
+   channel-group {{ mlag_channel_group }} mode active
+!
+interface Port-Channel{{ mlag_channel_group }}
+   description MLAG - PEER LINK - {{ mlag_peer_name }}
+   switchport mode trunk
+   switchport trunk group {{ trunk_group_name }}
+!
 interface Vlan{{ mlag_vlan }}
-  description MLAG PEER LINK - {{ mlag_peer_name }}
-  ip address {{ mlag_ip }}/{{ mlag_netmask }}
-
+   description MLAG PEER LINK - {{ mlag_peer_name }}
+   ip address {{ h.mlag_ip }}/{{ mlag_netmask }}
+!
 mlag configuration
-  domain-id MLAG{{ mlag_vlan }}
-  local-interface Vlan{{ mlag_vlan }}
-  peer-address {{ mlag_peer_ip }}
-  peer-link Port-Channel10
+   domain-id MLAG{{ mlag_vlan }}
+   local-interface Vlan{{ mlag_vlan }}
+   peer-address {{ h.mlag_peer_ip }}
+   peer-link Port-Channel{{ mlag_channel_group }}

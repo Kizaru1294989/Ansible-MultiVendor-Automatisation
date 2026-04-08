@@ -1,0 +1,7 @@
+# Variables specifiques a host1
+
+po_id: 10
+po_ip: 172.16.115.100/24
+eth_po_first: 1
+eth_po_second: 2
+route: ip route 172.16.116.0/24 172.16.115.1

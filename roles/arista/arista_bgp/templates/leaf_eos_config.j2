@@ -1,0 +1,52 @@
+{% set h = host_config[inventory_hostname] %}
+{% set my_index = inventory_hostname | regex_replace('[^0-9]', '') | int %}
+{% for user in h.svis | default([]) %}
+service routing protocols model multi-agent
+!
+vlan {{ user.vlan_id }}
+!
+interface Loopback0
+   ip address {{ h.loopback0_ip }}/32
+!
+interface port-channel{{ user.vlan_id }}
+   switchport access vlan {{ user.vlan_id }}
+   mlag {{ user.vlan_id }}
+!
+interface Ethernet{{ user.eth_int_host }}
+   description HOST{{ user.vlan_id }}
+   channel-group {{ user.vlan_id }} mode active
+!
+ip virtual-router mac-address {{ h.virtual_router_mac }}
+!
+! Interfaces physiques vers les spines
+{% for link in interconnects if link.leaf == my_index %}
+interface Ethernet{{ link.leaf_eth }}
+   description SPINE{{ link.spine }}
+   no switchport
+   ip address {{ link.leaf_ip }}/30
+!
+{% endfor %}
+!
+ip routing
+!
+router bgp {{ h.bgp_asn }}
+   router-id {{ h.loopback0_ip }}
+   maximum-paths {{ bgp_max_paths | default(4) }} ecmp {{ bgp_max_paths | default(4) }}
+   !
+   ! iBGP - MLAG peer
+   neighbor {{ h.mlag_peer_ip }} remote-as {{ h.bgp_asn }}
+   neighbor {{ h.mlag_peer_ip }} next-hop-self
+   neighbor {{ h.mlag_peer_ip }} maximum-routes {{ bgp_max_routes | default(12000) }}
+   !
+   ! Spines
+{% for link in interconnects if link.leaf == my_index %}
+   neighbor {{ link.spine_ip }} remote-as {{ bgp_asn_spines }}
+   neighbor {{ link.spine_ip }} maximum-routes {{ bgp_max_routes | default(12000) }}
+{% endfor %}
+   !
+   ! Networks annoncés
+   network {{ h.loopback0_ip }}/32
+{% for net in h.bgp_networks | default([]) %}
+   network {{ net }}
+{% endfor %}
+{% endfor %}

@@ -1,0 +1,55 @@
+{% set spine_id = inventory_hostname | regex_replace('[^0-9]', '') | int %}
+!
+service routing protocols model multi-agent
+!
+interface Loopback0
+   ip address {{ loopback0_ip }}/32
+!
+{% for link in interconnects if link.spine == spine_id %}
+interface Ethernet{{ link.spine_eth }}
+   description LEAF{{ link.leaf }}
+   no switchport
+   ip address {{ link.spine_ip }}/30
+!
+{% endfor %}
+ip routing
+!
+ip prefix-list rt-conn
+   seq 10 permit {{ loopback0_ip }}/32
+!
+route-map rt-conn permit 10
+   match ip address prefix-list rt-conn
+!
+router bgp {{ bgp_asn }}
+   router-id {{ loopback0_ip }}
+   maximum-paths {{ bgp_max_paths | default(4) }} ecmp {{ bgp_max_paths | default(4) }}
+   !
+   neighbor LEAF peer group
+   neighbor LEAF bfd
+   neighbor LEAF send-community
+   neighbor LEAF maximum-routes {{ bgp_max_routes | default(12000) }}
+   !
+   neighbor LEAF-EVPN-TRANSIT peer group
+   neighbor LEAF-EVPN-TRANSIT next-hop-unchanged
+   neighbor LEAF-EVPN-TRANSIT update-source Loopback0
+   neighbor LEAF-EVPN-TRANSIT ebgp-multihop
+   neighbor LEAF-EVPN-TRANSIT send-community extended
+   neighbor LEAF-EVPN-TRANSIT maximum-routes 0
+   !
+{% for link in interconnects if link.spine == spine_id %}
+   {% set leaf_name = "leaf" ~ link.leaf %}
+   neighbor {{ link.leaf_ip }} peer group LEAF
+   neighbor {{ link.leaf_ip }} remote-as {{ leafs_asn[link.leaf] }}
+   neighbor {{ hostvars[leaf_name].loopback0_ip }} peer group LEAF-EVPN-TRANSIT
+   neighbor {{ hostvars[leaf_name].loopback0_ip }} remote-as {{ leafs_asn[link.leaf] }}
+{% endfor %}
+   !
+   redistribute connected route-map rt-conn
+   !
+   address-family evpn
+      bgp next-hop-unchanged
+      neighbor LEAF-EVPN-TRANSIT activate
+   !
+   address-family ipv4
+      no neighbor LEAF-EVPN-TRANSIT activate
+!

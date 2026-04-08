@@ -1,0 +1,28 @@
+{% set h = host_config[inventory_hostname] %}
+{% set my_index = inventory_hostname | regex_replace('[^0-9]', '') | int %}
+service routing protocols model multi-agent
+!
+interface Loopback0
+   ip address {{ h.loopback0_ip }}/32
+!
+! Interfaces physiques vers les leafs
+{% for link in interconnects if link.spine == my_index %}
+interface Ethernet{{ link.spine_eth }}
+   description LEAF{{ link.leaf }}
+   no switchport
+   ip address {{ link.spine_ip }}/30
+!
+{% endfor %}
+ip routing
+!
+router bgp {{ h.bgp_asn }}
+   router-id {{ h.loopback0_ip }}
+   maximum-paths {{ bgp_max_paths | default(4) }} ecmp {{ bgp_max_paths | default(4) }}
+   !
+{% for link in interconnects if link.spine == my_index %}
+   neighbor {{ link.leaf_ip }} remote-as {{ leafs_asn[link.leaf] }}
+   neighbor {{ link.leaf_ip }} send-community extended
+   neighbor {{ link.leaf_ip }} maximum-routes {{ bgp_max_routes | default(12000) }}
+{% endfor %}
+   !
+   network {{ h.loopback0_ip }}/32

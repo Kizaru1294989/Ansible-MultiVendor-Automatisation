@@ -1,0 +1,13 @@
+{% set h = host_config[inventory_hostname] %}
+!
+interface Port-Channel{{ h.po_id }}
+   no switchport
+   ip address {{ h.po_ip }}
+!
+interface Ethernet{{ h.eth_po_first }}
+   channel-group {{ h.po_id }} mode active
+!
+interface Ethernet{{ h.eth_po_second }}
+   channel-group {{ h.po_id }} mode active
+!
+{{ h.route }}

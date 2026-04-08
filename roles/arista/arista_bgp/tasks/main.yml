@@ -1,0 +1,30 @@
+- name: Générer la config BGP
+  template:
+    src: >-
+      {{ 'spine_eos_config.j2' if 'spines' in group_names else
+         'host_eos_config.j2'  if 'hosts' in group_names else
+         'leaf_eos_config.j2' }}
+    dest: "/tmp/{{ inventory_hostname }}-bgp.conf"
+  tags: bgp
+
+- name: Appliquer la config BGP
+  eos_config:
+    src: "/tmp/{{ inventory_hostname }}-bgp.conf"
+  tags: bgp
+
+- name: Attendre la convergence BGP
+  pause:
+    seconds: 10
+  tags: bgp
+
+- name: Vérifier le status BGP
+  eos_command:
+    commands: show bgp summary
+  register: bgp_output
+  when: "'hosts' not in group_names"
+  tags: bgp
+
+- name: Afficher la sortie BGP
+  debug:
+    var: bgp_output.stdout_lines
+  tags: bgp

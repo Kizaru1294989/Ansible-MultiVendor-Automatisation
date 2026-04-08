@@ -1,0 +1,134 @@
+{% set leaf_id = inventory_hostname | regex_replace('[^0-9]', '') | int %}
+!
+service routing protocols model multi-agent
+!
+vlan {{ mlag_vlan }}
+   trunk group {{ trunk_group_name }}
+!
+vlan {{ svis | map(attribute='vlan_id') | join(',') }}
+!
+vrf instance {{ vrf_customer_names }}
+!
+interface Loopback0
+   ip address {{ loopback0_ip }}/32
+!
+interface Loopback1
+   ip address {{ loopback1_ip }}/32
+!
+interface Loopback{{ loopback_test_id }}
+   vrf {{ vrf_customer_names }}
+   ip address {{ loopback_test_ip }}/32
+!
+interface Ethernet{{ mlag_peer_first_eth_int }}
+   description MLAG - PEER LINK - {{ mlag_peer_name }}
+   channel-group {{ mlag_channel_group }} mode active
+!
+interface Ethernet{{ mlag_peer_second_eth_int }}
+   description MLAG - PEER LINK - {{ mlag_peer_name }}
+   channel-group {{ mlag_channel_group }} mode active
+!
+{% for svi in svis | default([]) %}
+interface Port-Channel{{ svi.vlan_id }}
+   switchport access vlan {{ svi.vlan_id }}
+   mlag {{ svi.vlan_id }}
+!
+interface Vlan{{ svi.vlan_id }}
+   mtu 9000
+   no autostate
+   vrf {{ vrf_customer_names }}
+   ip address {{ svi.ip }}/{{ svi.prefix }}
+   ip virtual-router address {{ svi.virtual_ip }}/{{ svi.prefix }}
+!
+interface Ethernet{{ svi.eth_int_host }}
+   description HOST{{ svi.vlan_id }}
+   channel-group {{ svi.vlan_id }} mode active
+!
+{% endfor %}
+interface Port-Channel{{ mlag_channel_group }}
+   description MLAG - PEER LINK - {{ mlag_peer_name }}
+   switchport mode trunk
+   switchport trunk group {{ trunk_group_name }}
+!
+interface Vlan{{ mlag_vlan }}
+   description MLAG PEER LINK - {{ mlag_peer_name }}
+   ip address {{ mlag_ip }}/{{ mlag_netmask }}
+!
+mlag configuration
+   domain-id MLAG{{ mlag_vlan }}
+   local-interface Vlan{{ mlag_vlan }}
+   peer-address {{ mlag_peer_ip }}
+   peer-link Port-Channel{{ mlag_channel_group }}
+!
+interface Vxlan1
+   vxlan source-interface Loopback1
+   vxlan udp-port 4789
+{% for svi in svis | default([]) %}
+   vxlan vlan {{ svi.vlan_id }} vni {{ vni_l2 }}
+{% endfor %}
+   vxlan vrf {{ vrf_customer_names }} vni 1001
+!
+{% for link in interconnects if link.leaf == leaf_id %}
+interface Ethernet{{ link.leaf_eth }}
+   description SPINE{{ link.spine }}
+   no switchport
+   ip address {{ link.leaf_ip }}/30
+!
+{% endfor %}
+ip routing
+ip routing vrf {{ vrf_customer_names }}
+!
+ip virtual-router mac-address {{ virtual_router_mac }}
+!
+ip prefix-list rt-conn
+   seq 10 permit {{ loopback0_ip }}/32
+!
+route-map rt-conn permit 10
+   match ip address prefix-list rt-conn
+!
+router bgp {{ bgp_asn }}
+   router-id {{ loopback0_ip }}
+   maximum-paths {{ bgp_max_paths | default(4) }} ecmp {{ bgp_max_paths | default(4) }}
+   neighbor {{ mlag_peer_ip }} remote-as {{ bgp_asn }}
+   neighbor {{ mlag_peer_ip }} next-hop-self
+   neighbor {{ mlag_peer_ip }} maximum-routes {{ bgp_max_routes | default(12000) }}
+   neighbor {{ peer_group }} peer group
+   neighbor {{ peer_group }} bfd
+   neighbor {{ peer_group }} send-community
+   neighbor {{ peer_group }} maximum-routes {{ bgp_max_routes | default(12000) }}
+   neighbor {{ peer_group_evpn }} peer group
+   neighbor {{ peer_group_evpn }} next-hop-unchanged
+   neighbor {{ peer_group_evpn }} update-source Loopback0
+   neighbor {{ peer_group_evpn }} ebgp-multihop
+   neighbor {{ peer_group_evpn }} send-community extended
+   neighbor {{ peer_group_evpn }} maximum-routes 0
+{% for link in interconnects if link.leaf == leaf_id %}
+   {% set spine_name = "spine" ~ link.spine %}
+   neighbor {{ link.spine_ip }} peer group {{ peer_group }}
+   neighbor {{ link.spine_ip }} remote-as {{ bgp_asn_spines }}
+   neighbor {{ hostvars[spine_name].loopback0_ip }} peer group {{ peer_group_evpn }}
+   neighbor {{ hostvars[spine_name].loopback0_ip }} remote-as {{ bgp_asn_spines }}
+{% endfor %}
+   redistribute connected
+{% for svi in svis | default([]) %}
+   vlan {{ svi.vlan_id }}
+      rd {{ loopback0_ip }}:{{ vni_l2 }}
+      route-target both 1:{{ vni_l2 }}
+      redistribute learned
+   !
+{% endfor %}
+   address-family evpn
+      neighbor {{ peer_group_evpn }} activate
+   !
+   address-family ipv4
+      no neighbor {{ peer_group_evpn }} activate
+{% for net in bgp_networks | default([]) %}
+      network {{ net }}
+{% endfor %}
+   !
+   vrf {{ vrf_customer_names }}
+      rd {{ loopback0_ip }}:{{ route_distinguisher }}
+      route-target import 1:1001
+      route-target export 1:1001
+      redistribute connected
+      redistribute static
+!

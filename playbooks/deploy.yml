@@ -1,7 +1,33 @@
-- name: Déploiement de la configuration MLAG sur les switches Arista
+---
+- name: Déploiement de la configuration sur les switches Arista
   hosts: arista
   gather_facts: false
-  connection: network_cli
+  pre_tasks:
+    - name: Sauvegarder la configuration actuelle
+      eos_command:
+        commands: "show running-config"
+      register: backup_config
+      tags: always
+
+    - name: Créer le dossier backup s'il n'existe pas
+      file:
+        path: "{{ playbook_dir }}/../backups/{{ inventory_hostname }}"
+        state: directory
+        mode: '0755'
+      delegate_to: localhost
+      tags: always
+
+    - name: Sauvegarder localement dans backups/{{ inventory_hostname }}
+      copy:
+        content: "{{ backup_config.stdout[0] | default('') }}"
+        dest: "{{ playbook_dir }}/../backups/{{ inventory_hostname }}/config-{{ lookup('pipe', 'date +%Y%m%dT%H%M%S') }}.conf"
+      delegate_to: localhost
+      tags: always
 
   roles:
     - role: arista/arista_mlag
+      tags: mlag
+    - role: arista/arista_bgp
+      tags: bgp
+    - role: arista/arista_vxlan-evpn_l3
+      tags: evpn

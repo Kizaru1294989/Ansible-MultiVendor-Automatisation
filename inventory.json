@@ -1,0 +1,60 @@
+{
+  "hosts": [
+    {
+      "hostname":       "spine1",
+      "management_ip":  "192.168.28.20",
+      "username":       "cvpadmin",
+      "password":       "Exaprobe1234",
+      "group":          "spines"
+    },
+    {
+      "hostname":       "spine2",
+      "management_ip":  "192.168.28.21",
+      "username":       "cvpadmin",
+      "password":       "Exaprobe1234",
+      "group":          "spines"
+    },
+    {
+      "hostname":       "leaf1",
+      "management_ip":  "192.168.28.22",
+      "username":       "cvpadmin",
+      "password":       "Exaprobe1234",
+      "group":          "leafs"
+    },
+    {
+      "hostname":       "leaf2",
+      "management_ip":  "192.168.28.23",
+      "username":       "cvpadmin",
+      "password":       "Exaprobe1234",
+      "group":          "leafs"
+    },
+    {
+      "hostname":       "leaf3",
+      "management_ip":  "192.168.28.24",
+      "username":       "cvpadmin",
+      "password":       "Exaprobe1234",
+      "group":          "leafs"
+    },
+    {
+      "hostname":       "leaf4",
+      "management_ip":  "192.168.28.25",
+      "username":       "cvpadmin",
+      "password":       "Exaprobe1234",
+      "group":          "leafs"
+    },
+    {
+      "hostname":       "host1",
+      "management_ip":  "192.168.28.26",
+      "username":       "cvpadmin",
+      "password":       "Exaprobe1234",
+      "group":          "hosts"
+    },
+    {
+      "hostname":       "host2",
+      "management_ip":  "192.168.28.27",
+      "username":       "cvpadmin",
+      "password":       "Exaprobe1234",
+      "group":          "hosts"
+    }
+  ]
+}
