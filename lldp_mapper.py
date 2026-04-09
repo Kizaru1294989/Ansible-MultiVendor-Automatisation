@@ -208,7 +208,7 @@ def generate_html(graph: dict, output_path: str):
 
 def main():
     parser = argparse.ArgumentParser(description="LLDP Network Mapper — Arista eAPI → HTML vis.js")
-    parser.add_argument("-i", "--inventory", default="inventory.json")
+    parser.add_argument("-i", "--inventory", default="inventory-lldp.json")
     parser.add_argument("-o", "--output",    default="network_map_output.html")
     parser.add_argument("--cache", action="store_true",
                         help="Réutilise le cache JSON sans re-interroger les équipements")

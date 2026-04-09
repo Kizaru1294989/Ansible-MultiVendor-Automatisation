@@ -71,7 +71,7 @@ interface Vxlan1
 interface Ethernet{{ link.leaf_eth }}
    description SPINE{{ link.spine }}
    no switchport
-   ip address {{ link.leaf_ip }}/30
+   ip address {{ link.leaf_ip }}/{{ link.network.split('/')[1] }}
 !
 {% endfor %}
 ip routing

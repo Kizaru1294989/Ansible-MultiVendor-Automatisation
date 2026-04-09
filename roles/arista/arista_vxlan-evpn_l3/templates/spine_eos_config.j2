@@ -9,7 +9,7 @@ interface Loopback0
 interface Ethernet{{ link.spine_eth }}
    description LEAF{{ link.leaf }}
    no switchport
-   ip address {{ link.spine_ip }}/30
+   ip address {{ link.spine_ip }}/{{ link.network.split('/')[1] }}
 !
 {% endfor %}
 ip routing
