@@ -1,5 +1,0 @@
-# VXLAN EVPN - Variables globales communes a tous les leafs
-
-peer_group: SPINE
-peer_group_evpn: SPINE-EVPN-TRANSIT
-vrf_customer_names: customer

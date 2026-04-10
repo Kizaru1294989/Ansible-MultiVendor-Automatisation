@@ -1,0 +1,238 @@
+{
+  "fabric": {
+    "loopback0_base": "172.16.0.0/24",
+    "loopback1_base": "1.1.2.0/24",
+    "loopback_test_base": "10.10.10.0/24",
+    "mlag_spine_base": "172.16.5.0/31",
+    "mlag_leaf_base": "100.0.0.0/24",
+    "interconnect_base": "172.16.200.0/24",
+    "interconnect_prefix": 31,
+    "asn_spines": 65000,
+    "asn_leafs_base": 65001,
+    "vni_base": 10000,
+    "route_distinguisher_base": 1000,
+    "loopback_test_id": 100,
+    "virtual_router_mac_base": "00:1c:73:00:00:",
+    "bgp_max_paths": 4,
+    "bgp_max_routes": 12000
+  },
+  "mlag": {
+    "mgmt_gateway": "192.168.28.254",
+    "mlag_vlan": 4094,
+    "mlag_peer_name": "lag",
+    "mlag_netmask": 31,
+    "mlag_channel_group": 4094,
+    "trunk_group_name": "mlag-peer",
+    "mlag_peer_first_eth_int": 3,
+    "mlag_peer_second_eth_int": 4
+  },
+  "vxlan_evpn": {
+    "peer_group": "SPINE",
+    "peer_group_evpn": "SPINE-EVPN-TRANSIT",
+    "vrf_customer_names": "customer"
+  },
+  "inventory": {
+    "arista_vars": {
+      "ansible_user": "cvpadmin",
+      "ansible_password": "Exaprobe1234",
+      "ansible_connection": "httpapi",
+      "ansible_network_os": "eos",
+      "ansible_httpapi_use_ssl": true,
+      "ansible_httpapi_validate_certs": false,
+      "ansible_httpapi_port": 443
+    },
+    "spines": {
+      "spine1": {
+        "ansible_host": "192.168.28.20",
+        "mgmt_ip": "192.168.28.20"
+      },
+      "spine2": {
+        "ansible_host": "192.168.28.21",
+        "mgmt_ip": "192.168.28.21"
+      }
+    },
+    "leafs": {
+      "leaf1": {
+        "ansible_host": "192.168.28.22",
+        "mgmt_ip": "192.168.28.22",
+        "svis": [
+          {
+            "vlan_id": 3,
+            "ip": "172.16.115.2",
+            "prefix": 24,
+            "virtual_ip": "172.16.115.1",
+            "eth_int_host": 5
+          }
+        ]
+      },
+      "leaf2": {
+        "ansible_host": "192.168.28.23",
+        "mgmt_ip": "192.168.28.23",
+        "svis": [
+          {
+            "vlan_id": 3,
+            "ip": "172.16.115.3",
+            "prefix": 24,
+            "virtual_ip": "172.16.115.1",
+            "eth_int_host": 5
+          }
+        ]
+      },
+      "leaf3": {
+        "ansible_host": "192.168.28.24",
+        "mgmt_ip": "192.168.28.24",
+        "svis": [
+          {
+            "vlan_id": 6,
+            "ip": "172.16.116.2",
+            "prefix": 24,
+            "virtual_ip": "172.16.116.1",
+            "eth_int_host": 5
+          }
+        ]
+      },
+      "leaf4": {
+        "ansible_host": "192.168.28.25",
+        "mgmt_ip": "192.168.28.25",
+        "svis": [
+          {
+            "vlan_id": 6,
+            "ip": "172.16.116.3",
+            "prefix": 24,
+            "virtual_ip": "172.16.116.1",
+            "eth_int_host": 5
+          }
+        ]
+      },
+      "leaf5": {
+        "ansible_host": "192.168.28.28",
+        "mgmt_ip": "192.168.28.28",
+        "svis": [
+          {
+            "vlan_id": 9,
+            "ip": "172.16.117.2",
+            "prefix": 24,
+            "virtual_ip": "172.16.117.1",
+            "eth_int_host": 5
+          }
+        ]
+      },
+      "leaf6": {
+        "ansible_host": "192.168.28.29",
+        "mgmt_ip": "192.168.28.29",
+        "svis": [
+          {
+            "vlan_id": 9,
+            "ip": "172.16.117.3",
+            "prefix": 24,
+            "virtual_ip": "172.16.117.1",
+            "eth_int_host": 5
+          }
+        ]
+      }
+    },
+    "hosts": {
+      "host1": {
+        "ansible_host": "192.168.28.26",
+        "mgmt_ip": "192.168.28.26",
+        "po_id": 10,
+        "po_ip": "172.16.115.100/24",
+        "eth_po_first": 1,
+        "eth_po_second": 2,
+        "route": "ip route 172.16.116.0/24 172.16.115.1"
+      },
+      "host2": {
+        "ansible_host": "192.168.28.27",
+        "mgmt_ip": "192.168.28.27",
+        "po_id": 10,
+        "po_ip": "172.16.116.100/24",
+        "eth_po_first": 1,
+        "eth_po_second": 2,
+        "route": "ip route 172.16.115.0/24 172.16.116.1"
+      },
+      "host3": {
+        "ansible_host": "192.168.28.30",
+        "mgmt_ip": "192.168.28.30",
+        "po_id": 10,
+        "po_ip": "172.16.117.100/24",
+        "eth_po_first": 1,
+        "eth_po_second": 2,
+        "route": "ip route 172.16.115.0/24 172.16.117.1"
+      }
+    }
+  },
+  "interconnect_links": [
+    {
+      "spine": 1,
+      "leaf": 1,
+      "spine_eth": 1,
+      "leaf_eth": 1
+    },
+    {
+      "spine": 1,
+      "leaf": 2,
+      "spine_eth": 3,
+      "leaf_eth": 1
+    },
+    {
+      "spine": 1,
+      "leaf": 3,
+      "spine_eth": 4,
+      "leaf_eth": 1
+    },
+    {
+      "spine": 1,
+      "leaf": 4,
+      "spine_eth": 2,
+      "leaf_eth": 2
+    },
+    {
+      "spine": 1,
+      "leaf": 5,
+      "spine_eth": 5,
+      "leaf_eth": 1
+    },
+    {
+      "spine": 1,
+      "leaf": 6,
+      "spine_eth": 6,
+      "leaf_eth": 1
+    },
+    {
+      "spine": 2,
+      "leaf": 1,
+      "spine_eth": 2,
+      "leaf_eth": 2
+    },
+    {
+      "spine": 2,
+      "leaf": 2,
+      "spine_eth": 3,
+      "leaf_eth": 2
+    },
+    {
+      "spine": 2,
+      "leaf": 3,
+      "spine_eth": 4,
+      "leaf_eth": 2
+    },
+    {
+      "spine": 2,
+      "leaf": 4,
+      "spine_eth": 1,
+      "leaf_eth": 1
+    },
+    {
+      "spine": 2,
+      "leaf": 5,
+      "spine_eth": 5,
+      "leaf_eth": 2
+    },
+    {
+      "spine": 2,
+      "leaf": 6,
+      "spine_eth": 6,
+      "leaf_eth": 2
+    }
+  ]
+}

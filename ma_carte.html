@@ -263,6 +263,26 @@ const RAW_NODES = [
     "eos_version": "4.33.2F",
     "serial": "C2873DD8D2380664CBAB48A7C7F75AEF",
     "chassis_mac": "5000.001b.5e8d"
+  },
+  {
+    "id": "leaf-5",
+    "label": "leaf-5",
+    "group": "unknown",
+    "management_ip": "N/A",
+    "model": "N/A",
+    "eos_version": "N/A",
+    "serial": "N/A",
+    "chassis_mac": "5000.0043.40cf"
+  },
+  {
+    "id": "leaf-6",
+    "label": "leaf-6",
+    "group": "unknown",
+    "management_ip": "N/A",
+    "model": "N/A",
+    "eos_version": "N/A",
+    "serial": "N/A",
+    "chassis_mac": "5000.00d8.ac19"
   }
 ];
 const RAW_EDGES = [
@@ -291,6 +311,18 @@ const RAW_EDGES = [
     "remote_interface": "\"Ethernet1\""
   },
   {
+    "from": "spine1",
+    "to": "leaf-5",
+    "local_interface": "Ethernet5",
+    "remote_interface": "\"Ethernet1\""
+  },
+  {
+    "from": "spine1",
+    "to": "leaf-6",
+    "local_interface": "Ethernet6",
+    "remote_interface": "\"Ethernet1\""
+  },
+  {
     "from": "spine2",
     "to": "leaf4",
     "local_interface": "Ethernet1",
@@ -312,6 +344,18 @@ const RAW_EDGES = [
     "from": "spine2",
     "to": "leaf3",
     "local_interface": "Ethernet4",
+    "remote_interface": "\"Ethernet2\""
+  },
+  {
+    "from": "spine2",
+    "to": "leaf-5",
+    "local_interface": "Ethernet5",
+    "remote_interface": "\"Ethernet2\""
+  },
+  {
+    "from": "spine2",
+    "to": "leaf-6",
+    "local_interface": "Ethernet6",
     "remote_interface": "\"Ethernet2\""
   },
   {

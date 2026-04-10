@@ -42,7 +42,7 @@
 
     - name: Vérifier le status VXLAN EVPN
       eos_command:
-        commands: show vxlan address-table
+        commands: sh bgp evpn route-type imet
       register: evpn_output
       when: "'hosts' not in group_names"
 

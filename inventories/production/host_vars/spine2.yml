@@ -1,6 +1,0 @@
-# Variables specifiques a spine2
-
-loopback0_ip: 172.16.0.2
-bgp_asn: 65000
-mlag_ip: 172.16.5.2
-mlag_peer_ip: 172.16.5.1

@@ -1,0 +1,314 @@
+[
+  {
+    "hostname": "spine1",
+    "display_name": "spine1",
+    "management_ip": "192.168.28.20",
+    "model": "vEOS-lab",
+    "eos_version": "4.33.2F",
+    "serial": "5BD24574F26080F6075E2C3E4F276933",
+    "chassis_mac": "5000.0015.f4e8",
+    "group": "spines",
+    "neighbors": [
+      {
+        "local_interface": "Ethernet1",
+        "remote_hostname": "leaf-1",
+        "remote_interface": "\"Ethernet1\"",
+        "remote_chassis_mac": "5000.00d5.5dc0"
+      },
+      {
+        "local_interface": "Ethernet2",
+        "remote_hostname": "leaf-4",
+        "remote_interface": "\"Ethernet2\"",
+        "remote_chassis_mac": "5000.00cb.38c2"
+      },
+      {
+        "local_interface": "Ethernet3",
+        "remote_hostname": "leaf-2",
+        "remote_interface": "\"Ethernet1\"",
+        "remote_chassis_mac": "5000.0072.8b31"
+      },
+      {
+        "local_interface": "Ethernet4",
+        "remote_hostname": "leaf-3",
+        "remote_interface": "\"Ethernet1\"",
+        "remote_chassis_mac": "5000.00d7.ee0b"
+      },
+      {
+        "local_interface": "Ethernet5",
+        "remote_hostname": "leaf-5",
+        "remote_interface": "\"Ethernet1\"",
+        "remote_chassis_mac": "5000.0043.40cf"
+      },
+      {
+        "local_interface": "Ethernet6",
+        "remote_hostname": "leaf-6",
+        "remote_interface": "\"Ethernet1\"",
+        "remote_chassis_mac": "5000.00d8.ac19"
+      }
+    ]
+  },
+  {
+    "hostname": "spine2",
+    "display_name": "spine2",
+    "management_ip": "192.168.28.21",
+    "model": "vEOS-lab",
+    "eos_version": "4.33.2F",
+    "serial": "302CF472C98265CFA060E35BBCA29A9C",
+    "chassis_mac": "5000.0003.3766",
+    "group": "spines",
+    "neighbors": [
+      {
+        "local_interface": "Ethernet1",
+        "remote_hostname": "leaf-4",
+        "remote_interface": "\"Ethernet1\"",
+        "remote_chassis_mac": "5000.00cb.38c2"
+      },
+      {
+        "local_interface": "Ethernet2",
+        "remote_hostname": "leaf-1",
+        "remote_interface": "\"Ethernet2\"",
+        "remote_chassis_mac": "5000.00d5.5dc0"
+      },
+      {
+        "local_interface": "Ethernet3",
+        "remote_hostname": "leaf-2",
+        "remote_interface": "\"Ethernet2\"",
+        "remote_chassis_mac": "5000.0072.8b31"
+      },
+      {
+        "local_interface": "Ethernet4",
+        "remote_hostname": "leaf-3",
+        "remote_interface": "\"Ethernet2\"",
+        "remote_chassis_mac": "5000.00d7.ee0b"
+      },
+      {
+        "local_interface": "Ethernet5",
+        "remote_hostname": "leaf-5",
+        "remote_interface": "\"Ethernet2\"",
+        "remote_chassis_mac": "5000.0043.40cf"
+      },
+      {
+        "local_interface": "Ethernet6",
+        "remote_hostname": "leaf-6",
+        "remote_interface": "\"Ethernet2\"",
+        "remote_chassis_mac": "5000.00d8.ac19"
+      }
+    ]
+  },
+  {
+    "hostname": "leaf1",
+    "display_name": "leaf1",
+    "management_ip": "192.168.28.22",
+    "model": "vEOS-lab",
+    "eos_version": "4.33.2F",
+    "serial": "A8E30F752E7EF55CD81FFE57BC9C492B",
+    "chassis_mac": "5000.00d5.5dc0",
+    "group": "leafs",
+    "neighbors": [
+      {
+        "local_interface": "Ethernet1",
+        "remote_hostname": "spine1",
+        "remote_interface": "\"Ethernet1\"",
+        "remote_chassis_mac": "5000.0015.f4e8"
+      },
+      {
+        "local_interface": "Ethernet2",
+        "remote_hostname": "spine2",
+        "remote_interface": "\"Ethernet2\"",
+        "remote_chassis_mac": "5000.0003.3766"
+      },
+      {
+        "local_interface": "Ethernet3",
+        "remote_hostname": "leaf-2",
+        "remote_interface": "\"Ethernet3\"",
+        "remote_chassis_mac": "5000.0072.8b31"
+      },
+      {
+        "local_interface": "Ethernet4",
+        "remote_hostname": "leaf-2",
+        "remote_interface": "\"Ethernet4\"",
+        "remote_chassis_mac": "5000.0072.8b31"
+      },
+      {
+        "local_interface": "Ethernet5",
+        "remote_hostname": "host-1",
+        "remote_interface": "\"Ethernet1\"",
+        "remote_chassis_mac": "5000.00f6.ad37"
+      }
+    ]
+  },
+  {
+    "hostname": "leaf2",
+    "display_name": "leaf2",
+    "management_ip": "192.168.28.23",
+    "model": "vEOS-lab",
+    "eos_version": "4.33.2F",
+    "serial": "B73551F687186C6762A74E011A627C4E",
+    "chassis_mac": "5000.0072.8b31",
+    "group": "leafs",
+    "neighbors": [
+      {
+        "local_interface": "Ethernet1",
+        "remote_hostname": "spine1",
+        "remote_interface": "\"Ethernet3\"",
+        "remote_chassis_mac": "5000.0015.f4e8"
+      },
+      {
+        "local_interface": "Ethernet2",
+        "remote_hostname": "spine2",
+        "remote_interface": "\"Ethernet3\"",
+        "remote_chassis_mac": "5000.0003.3766"
+      },
+      {
+        "local_interface": "Ethernet3",
+        "remote_hostname": "leaf-1",
+        "remote_interface": "\"Ethernet3\"",
+        "remote_chassis_mac": "5000.00d5.5dc0"
+      },
+      {
+        "local_interface": "Ethernet4",
+        "remote_hostname": "leaf-1",
+        "remote_interface": "\"Ethernet4\"",
+        "remote_chassis_mac": "5000.00d5.5dc0"
+      },
+      {
+        "local_interface": "Ethernet5",
+        "remote_hostname": "host-1",
+        "remote_interface": "\"Ethernet2\"",
+        "remote_chassis_mac": "5000.00f6.ad37"
+      }
+    ]
+  },
+  {
+    "hostname": "leaf3",
+    "display_name": "leaf3",
+    "management_ip": "192.168.28.24",
+    "model": "vEOS-lab",
+    "eos_version": "4.33.2F",
+    "serial": "7E10D02AA5537FD0F9711240A759D708",
+    "chassis_mac": "5000.00d7.ee0b",
+    "group": "leafs",
+    "neighbors": [
+      {
+        "local_interface": "Ethernet1",
+        "remote_hostname": "spine1",
+        "remote_interface": "\"Ethernet4\"",
+        "remote_chassis_mac": "5000.0015.f4e8"
+      },
+      {
+        "local_interface": "Ethernet2",
+        "remote_hostname": "spine2",
+        "remote_interface": "\"Ethernet4\"",
+        "remote_chassis_mac": "5000.0003.3766"
+      },
+      {
+        "local_interface": "Ethernet3",
+        "remote_hostname": "leaf-4",
+        "remote_interface": "\"Ethernet3\"",
+        "remote_chassis_mac": "5000.00cb.38c2"
+      },
+      {
+        "local_interface": "Ethernet4",
+        "remote_hostname": "leaf-4",
+        "remote_interface": "\"Ethernet4\"",
+        "remote_chassis_mac": "5000.00cb.38c2"
+      },
+      {
+        "local_interface": "Ethernet5",
+        "remote_hostname": "host-2",
+        "remote_interface": "\"Ethernet1\"",
+        "remote_chassis_mac": "5000.001b.5e8d"
+      }
+    ]
+  },
+  {
+    "hostname": "leaf4",
+    "display_name": "leaf4",
+    "management_ip": "192.168.28.25",
+    "model": "vEOS-lab",
+    "eos_version": "4.33.2F",
+    "serial": "ED1F51FCFBAE08441D1D972549D692AF",
+    "chassis_mac": "5000.00cb.38c2",
+    "group": "leafs",
+    "neighbors": [
+      {
+        "local_interface": "Ethernet1",
+        "remote_hostname": "spine2",
+        "remote_interface": "\"Ethernet1\"",
+        "remote_chassis_mac": "5000.0003.3766"
+      },
+      {
+        "local_interface": "Ethernet2",
+        "remote_hostname": "spine1",
+        "remote_interface": "\"Ethernet2\"",
+        "remote_chassis_mac": "5000.0015.f4e8"
+      },
+      {
+        "local_interface": "Ethernet3",
+        "remote_hostname": "leaf-3",
+        "remote_interface": "\"Ethernet3\"",
+        "remote_chassis_mac": "5000.00d7.ee0b"
+      },
+      {
+        "local_interface": "Ethernet4",
+        "remote_hostname": "leaf-3",
+        "remote_interface": "\"Ethernet4\"",
+        "remote_chassis_mac": "5000.00d7.ee0b"
+      },
+      {
+        "local_interface": "Ethernet5",
+        "remote_hostname": "host-2",
+        "remote_interface": "\"Ethernet2\"",
+        "remote_chassis_mac": "5000.001b.5e8d"
+      }
+    ]
+  },
+  {
+    "hostname": "host1",
+    "display_name": "host1",
+    "management_ip": "192.168.28.26",
+    "model": "vEOS-lab",
+    "eos_version": "4.33.2F",
+    "serial": "AE4BFF1BE45400EE2620A9C09233E684",
+    "chassis_mac": "5000.00f6.ad37",
+    "group": "hosts",
+    "neighbors": [
+      {
+        "local_interface": "Ethernet1",
+        "remote_hostname": "leaf-1",
+        "remote_interface": "\"Ethernet5\"",
+        "remote_chassis_mac": "5000.00d5.5dc0"
+      },
+      {
+        "local_interface": "Ethernet2",
+        "remote_hostname": "leaf-2",
+        "remote_interface": "\"Ethernet5\"",
+        "remote_chassis_mac": "5000.0072.8b31"
+      }
+    ]
+  },
+  {
+    "hostname": "host2",
+    "display_name": "host2",
+    "management_ip": "192.168.28.27",
+    "model": "vEOS-lab",
+    "eos_version": "4.33.2F",
+    "serial": "C2873DD8D2380664CBAB48A7C7F75AEF",
+    "chassis_mac": "5000.001b.5e8d",
+    "group": "hosts",
+    "neighbors": [
+      {
+        "local_interface": "Ethernet1",
+        "remote_hostname": "leaf-3",
+        "remote_interface": "\"Ethernet5\"",
+        "remote_chassis_mac": "5000.00d7.ee0b"
+      },
+      {
+        "local_interface": "Ethernet2",
+        "remote_hostname": "leaf-4",
+        "remote_interface": "\"Ethernet5\"",
+        "remote_chassis_mac": "5000.00cb.38c2"
+      }
+    ]
+  }
+]
