@@ -1,13 +1,18 @@
 - name: Déploiement MLAG BGP VXLAN EVPN
   tags: evpn
   block:
-    - name: Générer la config MLAG BGP VXLAN EVPN L3
+    # Dans roles/arista/arista_vxlan-evpn_l3/tasks/main.yml
+# Remplacez la task "Générer la config" par ceci :
+
+    - name: Generer la config MLAG BGP VXLAN EVPN L3
       template:
         src: >-
-          {{ 'spine_eos_config.j2' if 'spines' in group_names else
-             'host_eos_config.j2'  if 'hosts' in group_names else
-             'leaf_eos_config.j2' }}
+          {{ 'spine_eos_config.j2'        if 'spines' in group_names else
+            'border_leaf_eos_config.j2'  if (is_border_leaf | default(false)) else
+            'leaf_eos_config.j2'         if 'leafs'  in group_names else
+            'host_eos_config.j2' }}
         dest: "/tmp/{{ inventory_hostname }}-evpn.conf"
+      tags: evpn
 
     - name: Appliquer la config VXLAN EVPN
       eos_config:

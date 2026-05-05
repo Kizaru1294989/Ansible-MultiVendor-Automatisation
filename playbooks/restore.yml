@@ -1,5 +1,33 @@
-- name: ♻️ Restauration des configurations Arista
-  hosts: arista
-  gather_facts: no
-  roles:
-    - arista/arista_restore
+---
+# playbooks/restore.yml
+
+- name: "Restauration des configurations Arista"
+  hosts: "{{ target_group | default('arista') }}"
+  gather_facts: false
+
+  tasks:
+
+    - name: Chercher la derniere config de backup pour {{ inventory_hostname }}
+      find:
+        path: "{{ playbook_dir }}/../backups/{{ inventory_hostname }}"
+        patterns: "*.conf"
+        age_stamp: mtime
+      register: saved_configs
+
+    - name: Verifier qu'un backup existe
+      fail:
+        msg: "Aucun backup trouve dans backups/{{ inventory_hostname }}/"
+      when: saved_configs.files | length == 0
+
+    - name: Prendre la plus recente
+      set_fact:
+        last_backup: "{{ (saved_configs.files | sort(attribute='mtime'))[-1].path }}"
+
+    - name: Afficher le backup utilise
+      debug:
+        msg: "Restauration depuis : {{ last_backup }}"
+
+    - name: Restaurer la derniere configuration sauvegardee
+      arista.eos.eos_config:
+        src: "{{ last_backup }}"
+        replace: config

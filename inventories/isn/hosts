@@ -1,0 +1,15 @@
+[isn_devices]
+dc1-isn-1 ansible_host=192.168.28.37 mgmt_ip=192.168.28.37
+dc2-isn-2 ansible_host=192.168.28.38 mgmt_ip=192.168.28.38
+
+[isn:children]
+isn_devices
+
+[isn:vars]
+ansible_user=cvpadmin
+ansible_password=Exaprobe1234
+ansible_connection=httpapi
+ansible_network_os=eos
+ansible_httpapi_use_ssl=true
+ansible_httpapi_validate_certs=false
+ansible_httpapi_port=443

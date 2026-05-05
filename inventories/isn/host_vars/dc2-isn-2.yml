@@ -1,0 +1,31 @@
+# Variables specifiques a dc2-isn-2
+
+loopback0_ip: 172.16.100.2
+bgp_asn: 65100
+mgmt_ip: 192.168.28.38
+neighbors:
+- dc: dc2
+  leaf_name: dc2-leaf-3
+  leaf_asn: 64002
+  leaf_loopback0: 172.24.0.13
+  isn_local_ip: 20.0.0.21
+  leaf_ip: 20.0.0.20
+  prefix: 31
+  rt_import: 1:9999
+  rt_export: 1:9999
+  isn_eth: 2
+  isn_loopback0: 172.16.100.2
+- dc: dc2
+  leaf_name: dc2-leaf-4
+  leaf_asn: 64002
+  leaf_loopback0: 172.24.0.14
+  isn_local_ip: 20.0.0.23
+  leaf_ip: 20.0.0.22
+  prefix: 31
+  rt_import: 1:9999
+  rt_export: 1:9999
+  isn_eth: 3
+  isn_loopback0: 172.16.100.2
+inter_isn_ip: 172.16.250.1
+inter_isn_prefix: 31
+inter_isn_eth: 1

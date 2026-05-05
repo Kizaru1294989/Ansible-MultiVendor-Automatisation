@@ -1,0 +1,26 @@
+# Variables specifiques a dc1-leaf-6 (generees automatiquement)
+
+loopback0_ip: 172.16.0.16
+bgp_asn: 65003
+mlag_ip: 100.0.0.5
+mlag_peer_ip: 100.0.0.4
+virtual_router_mac: 00:1c:73:00:00:24
+loopback1_ip: 1.1.2.3
+loopback_test_id: 100
+loopback_test_ip: 10.10.10.60
+route_distinguisher: 3000
+bgp_networks:
+- 172.16.0.16/32
+svis: []
+is_border_leaf: true
+dci_links:
+- eth: 5
+  neighbor: dc1-isn-1
+  local_ip: 10.0.0.26
+  remote_ip: 10.0.0.27
+  prefix: 31
+  remote_asn: 65100
+  rt_import: 1:9999
+  rt_export: 1:9999
+  vni_l3: 5001
+  isn_loopback0: 172.16.100.1

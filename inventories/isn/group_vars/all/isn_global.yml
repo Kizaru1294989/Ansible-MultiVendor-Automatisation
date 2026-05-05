@@ -1,0 +1,4 @@
+# ISN - Variables globales
+
+isn_asn: 65100
+isn_routing_protocol: multi-agent

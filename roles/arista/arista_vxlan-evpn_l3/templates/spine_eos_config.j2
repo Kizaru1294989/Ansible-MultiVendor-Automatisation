@@ -1,4 +1,4 @@
-{% set spine_id = inventory_hostname | regex_replace('[^0-9]', '') | int %}
+{% set spine_id = inventory_hostname | regex_search("(\d+)$") | int %}
 !
 service routing protocols model multi-agent
 !
@@ -7,7 +7,7 @@ interface Loopback0
 !
 {% for link in interconnects if link.spine == spine_id %}
 interface Ethernet{{ link.spine_eth }}
-   description LEAF{{ link.leaf }}
+   description {{ link.leaf_name | upper }}
    no switchport
    ip address {{ link.spine_ip }}/{{ link.network.split('/')[1] }}
 !
@@ -37,11 +37,10 @@ router bgp {{ bgp_asn }}
    neighbor LEAF-EVPN-TRANSIT maximum-routes 0
    !
 {% for link in interconnects if link.spine == spine_id %}
-   {% set leaf_name = "leaf" ~ link.leaf %}
    neighbor {{ link.leaf_ip }} peer group LEAF
    neighbor {{ link.leaf_ip }} remote-as {{ leafs_asn[link.leaf] }}
-   neighbor {{ hostvars[leaf_name].loopback0_ip }} peer group LEAF-EVPN-TRANSIT
-   neighbor {{ hostvars[leaf_name].loopback0_ip }} remote-as {{ leafs_asn[link.leaf] }}
+   neighbor {{ hostvars[link.leaf_name].loopback0_ip }} peer group LEAF-EVPN-TRANSIT
+   neighbor {{ hostvars[link.leaf_name].loopback0_ip }} remote-as {{ leafs_asn[link.leaf] }}
 {% endfor %}
    !
    redistribute connected route-map rt-conn

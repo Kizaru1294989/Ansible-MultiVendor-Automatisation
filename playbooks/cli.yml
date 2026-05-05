@@ -1,0 +1,36 @@
+---
+# playbooks/cli.yml
+# -----------------
+# Envoie une ou plusieurs commandes CLI a des equipements Arista.
+#
+# Usage depuis run.sh :
+#   ./run.sh cli
+#
+# Usage direct :
+#   ansible-playbook -i inventories/production/hosts playbooks/cli.yml \
+#     -e "cli_target=leafs" -e "cli_commands=show mlag"
+#
+#   ansible-playbook -i inventories/production/hosts playbooks/cli.yml \
+#     -e "@vars.yml"  (avec cli_target et cli_commands dans le fichier)
+
+- name: Envoi de commandes CLI aux equipements Arista
+  hosts: "{{ cli_target | default('arista') }}"
+  gather_facts: false
+
+  vars:
+    cli_commands: "show version"
+    cli_target: "arista"
+
+  tasks:
+
+    - name: Envoyer les commandes
+      arista.eos.eos_command:
+        commands: "{{ cli_commands | split('|') | map('trim') | list }}"
+      register: cli_output
+
+    - name: Afficher les resultats
+      ansible.builtin.debug:
+        msg: "{{ item.1 }}"
+      loop: "{{ (cli_commands | split('|') | map('trim') | list) | zip(cli_output.stdout_lines) | list }}"
+      loop_control:
+        label: "{{ inventory_hostname }} - {{ item.0 | trim }}"

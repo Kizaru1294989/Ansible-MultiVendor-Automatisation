@@ -52,11 +52,13 @@ def normalize_hostname(name: str) -> str:
     Normalise le hostname pour Ansible :
       - Supprime le domaine FQDN
       - Lowercase
-      - Retire les tirets et underscores
-      ex: LEAF-3 -> leaf3 | spine_1 -> spine1 | leaf-5.domain.com -> leaf5
+      - Garde les tirets et underscores (formats dc1-spine-1, leaf-1, etc.)
+      ex: DC1-SPINE-1       -> dc1-spine-1
+          LEAF-3             -> leaf-3
+          spine1             -> spine1
+          leaf-5.domain.com  -> leaf-5
     """
     name = name.strip().split(".")[0].lower()
-    name = re.sub(r"[-_]", "", name)
     return name
 
 def detect_role(hostname: str) -> str:
@@ -66,8 +68,16 @@ def detect_role(hostname: str) -> str:
     return "unknown"
 
 def host_id(name: str) -> int:
-    m = re.sub(r"[^0-9]", "", name)
-    return int(m) if m else 0
+    """
+    Extrait le numero d identifiant depuis un hostname.
+    Prend le DERNIER groupe de chiffres trouve.
+      ex: dc1-spine-1  -> 1
+          leaf-3        -> 3
+          spine1        -> 1
+          dc2-leaf-12   -> 12
+    """
+    nums = re.findall(r"\d+", name)
+    return int(nums[-1]) if nums else 0
 
 def _parse_eth_id(intf: str) -> int:
     m = re.search(r"(\d+)", intf)
@@ -292,27 +302,52 @@ def detect_mlag_peer_ports(devices: dict, resolve) -> dict:
 
 def detect_host_ports(devices: dict, resolve) -> dict:
     """
-    Pour chaque leaf : detecte les ports connectes aux hosts via LLDP.
-    Retourne { "leaf1": [5], "leaf2": [5], ... }
+    Pour chaque leaf : detecte TOUS les ports connectes a des hosts via LLDP.
+    Inclut les hosts Arista ET les serveurs Linux (voisin non resolu = serveur).
+
+    Retourne :
+    {
+      "leaf1": [
+        { "eth": 5, "neighbor": "host1",         "type": "host" },
+        { "eth": 6, "neighbor": "linux-server-1", "type": "unknown" },
+      ],
+      ...
+    }
     """
     print("\nDetection des ports host (eth_int_host)...")
-    leafs = {h: d for h, d in devices.items() if d["role"] == "leaf"}
-    hosts = {h: d for h, d in devices.items() if d["role"] == "host"}
+
+    leafs   = {h: d for h, d in devices.items() if d["role"] == "leaf"}
+    spines  = {h: d for h, d in devices.items() if d["role"] == "spine"}
+    # Ports a exclure : spines et peers MLAG (autres leafs)
+    non_host_roles = {"spine", "leaf"}
+
     host_ports = {}
 
     for hostname, data in sorted(leafs.items()):
         ports = []
         for nbr in data["neighbors"]:
             canonical = resolve(nbr["remote_hostname"], nbr["remote_mac"])
-            if canonical in hosts:
-                ports.append(nbr["local_eth"])
+            role = devices.get(canonical, {}).get("role", "unknown")
+
+            # Exclure les ports vers spines et vers le peer MLAG
+            if role in non_host_roles:
+                continue
+
+            ports.append({
+                "eth":      nbr["local_eth"],
+                "neighbor": nbr["remote_hostname"],  # nom brut LLDP
+                "type":     role,  # "host" si Arista connu, "unknown" si Linux
+            })
+
+        ports.sort(key=lambda p: p["eth"])
+        host_ports[hostname] = ports
+
         if ports:
-            ports.sort()
-            host_ports[hostname] = ports[0]  # premier port host
-            print(f"  {hostname} : port host -> Eth{ports[0]}")
+            for p in ports:
+                tag = "Arista" if p["type"] == "host" else "Linux/inconnu"
+                print(f"  {hostname} : Eth{p['eth']} -> {p['neighbor']} [{tag}]")
         else:
-            host_ports[hostname] = None
-            print(f"  {hostname} : aucun host detecte via LLDP")
+            print(f"  {hostname} : aucun port host detecte via LLDP")
 
     return host_ports
 
@@ -393,7 +428,9 @@ def build_interconnect_links(devices: dict, resolve) -> list:
 def build_vars_auto(devices: dict, links: list, mlag_ports: dict,
                     host_ports: dict, mlag_first: int, mlag_second: int,
                     fabric_defaults: dict, vxlan_evpn: dict,
-                    arista_vars: dict) -> dict:
+                    arista_vars: dict, border_leafs: dict = None) -> dict:
+    if border_leafs is None:
+        border_leafs = {}
 
     spines = {h: d for h, d in devices.items() if d["role"] == "spine"}
     leafs  = {h: d for h, d in devices.items() if d["role"] == "leaf"}
@@ -415,21 +452,17 @@ def build_vars_auto(devices: dict, links: list, mlag_ports: dict,
         return {"ansible_host": d["ip"], "mgmt_ip": d["ip"]}
 
     def leaf_entry(hostname, d):
-        eth_host = host_ports.get(hostname)
+        ports     = host_ports.get(hostname, [])
+        dci_ports = border_leafs.get(hostname, [])
         return {
-            "ansible_host": d["ip"],
-            "mgmt_ip":      d["ip"],
-            # SVIs : l'user remplit vlan_id / ip / prefix / virtual_ip
-            # eth_int_host est detecte automatiquement via LLDP
-            "svis": [
-                {
-                    "vlan_id":    0,
-                    "ip":         "",
-                    "prefix":     24,
-                    "virtual_ip": "",
-                    "eth_int_host": eth_host if eth_host is not None else 5,
-                }
-            ],
+            "ansible_host":      d["ip"],
+            "mgmt_ip":           d["ip"],
+            "lldp_host_ports":   ports,
+            # Ports DCI detectes via LLDP (remplis par main.py si border leaf)
+            "is_border_leaf":    len(dci_ports) > 0,
+            "dci_links":         [],   # rempli interactivement dans main.py
+            "lldp_dci_ports":    dci_ports,
+            "svis":              [],
         }
 
     def host_entry(d):
@@ -520,6 +553,9 @@ def run_discovery(username: str, password: str, ip_range: str) -> dict:
     # 6. Matrice d'interconnexion
     links = build_interconnect_links(devices, resolve)
 
+    # 6b. Detection border leafs
+    border_leafs = detect_border_leafs(devices, resolve, links)
+
     # Resume
     spines  = sorted(h for h, d in devices.items() if d["role"] == "spine")
     leafs   = sorted(h for h, d in devices.items() if d["role"] == "leaf")
@@ -532,6 +568,8 @@ def run_discovery(username: str, password: str, ip_range: str) -> dict:
     print(f"  Hosts   : {', '.join(hosts)   or 'aucun'}")
     if unknown:
         print(f"  Inconnus: {', '.join(unknown)}")
+    if border_leafs:
+        print(f"  Border  : {', '.join(sorted(border_leafs.keys()))}")
     print(f"  Liens   : {len(links)} interconnexion(s) detectee(s)")
 
     # 7. Construction vars_auto
@@ -551,7 +589,8 @@ def run_discovery(username: str, password: str, ip_range: str) -> dict:
     vars_auto = build_vars_auto(
         devices, links, mlag_ports, host_ports,
         mlag_first, mlag_second,
-        fabric, DEFAULT_VXLAN_EVPN, arista_vars
+        fabric, DEFAULT_VXLAN_EVPN, arista_vars,
+        border_leafs
     )
 
     # 8. Sauvegarde
@@ -562,3 +601,75 @@ def run_discovery(username: str, password: str, ip_range: str) -> dict:
     print(f"  puis relancez : python3 main.py --generate")
 
     return vars_auto
+
+
+# ─── DETECTION BORDER LEAFS ───────────────────────────────────────────────────
+
+def detect_border_leafs(devices: dict, resolve, fabric_links: list) -> dict:
+    """
+    Detecte les border leafs en cherchant les leafs qui ont un voisin LLDP
+    inconnu (ni spine, ni leaf, ni host du fabric local).
+
+    Retourne :
+    {
+      "dc1-leaf-5": [
+        {
+          "eth":           7,
+          "neighbor":      "ISN-1",
+          "neighbor_mac":  "5000.0001.abcd",
+        }
+      ],
+      ...
+    }
+    """
+    print("\nDetection des border leafs (voisins DCI/ISN inconnus)...")
+
+    leafs          = {h: d for h, d in devices.items() if d["role"] == "leaf"}
+    known_hostnames = set(devices.keys())
+
+    # Ports deja utilises dans le fabric (spine<->leaf, mlag peer-link, hosts)
+    # On ne veut pas confondre un port DCI avec un port host
+    fabric_eth_per_leaf = {}
+    for link in fabric_links:
+        leaf_name = None
+        for h, d in devices.items():
+            if d["role"] == "leaf" and host_id(h) == link["leaf"]:
+                leaf_name = h
+                break
+        if leaf_name:
+            fabric_eth_per_leaf.setdefault(leaf_name, set()).add(link["leaf_eth"])
+
+    border_leafs = {}
+
+    for hostname, data in sorted(leafs.items()):
+        dci_ports = []
+        fabric_eths = fabric_eth_per_leaf.get(hostname, set())
+
+        for nbr in data["neighbors"]:
+            canonical = resolve(nbr["remote_hostname"], nbr["remote_mac"])
+            role      = devices.get(canonical, {}).get("role", "unknown")
+
+            # Si le voisin est connu dans le fabric -> pas un DCI
+            if canonical in known_hostnames and role != "unknown":
+                continue
+
+            # Si c'est un port deja utilise pour spine -> pas un DCI
+            if nbr["local_eth"] in fabric_eths:
+                continue
+
+            # Voisin inconnu sur un port non-fabric = DCI/ISN candidat
+            dci_ports.append({
+                "eth":          nbr["local_eth"],
+                "neighbor":     nbr["remote_hostname"],
+                "neighbor_mac": nbr["remote_mac"],
+            })
+
+        if dci_ports:
+            border_leafs[hostname] = dci_ports
+            for p in dci_ports:
+                print(f"  BORDER LEAF detecte : {hostname} Eth{p['eth']} -> {p['neighbor']}")
+
+    if not border_leafs:
+        print("  Aucun border leaf detecte.")
+
+    return border_leafs

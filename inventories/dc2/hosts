@@ -1,0 +1,25 @@
+[spines]
+dc2-spine-1 ansible_host=192.168.28.34 mgmt_ip=192.168.28.34
+dc2-spine-2 ansible_host=192.168.28.35 mgmt_ip=192.168.28.35
+
+[leafs]
+dc2-leaf-1 ansible_host=192.168.28.30 mgmt_ip=192.168.28.30
+dc2-leaf-2 ansible_host=192.168.28.31 mgmt_ip=192.168.28.31
+dc2-leaf-3 ansible_host=192.168.28.32 mgmt_ip=192.168.28.32
+dc2-leaf-4 ansible_host=192.168.28.33 mgmt_ip=192.168.28.33
+
+[hosts]
+
+[arista:children]
+spines
+leafs
+hosts
+
+[arista:vars]
+ansible_user=cvpadmin
+ansible_password=Exaprobe1234
+ansible_connection=httpapi
+ansible_network_os=eos
+ansible_httpapi_use_ssl=true
+ansible_httpapi_validate_certs=false
+ansible_httpapi_port=443

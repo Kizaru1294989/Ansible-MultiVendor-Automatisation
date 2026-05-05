@@ -42,196 +42,182 @@
       "ansible_httpapi_port": 443
     },
     "spines": {
-      "spine1": {
-        "ansible_host": "192.168.28.20",
-        "mgmt_ip": "192.168.28.20"
+      "dc2-spine-1": {
+        "ansible_host": "192.168.28.34",
+        "mgmt_ip": "192.168.28.34"
       },
-      "spine2": {
-        "ansible_host": "192.168.28.21",
-        "mgmt_ip": "192.168.28.21"
+      "dc2-spine-2": {
+        "ansible_host": "192.168.28.35",
+        "mgmt_ip": "192.168.28.35"
       }
     },
     "leafs": {
-      "leaf1": {
-        "ansible_host": "192.168.28.22",
-        "mgmt_ip": "192.168.28.22",
-        "svis": [
-          {
-            "vlan_id": 3,
-            "ip": "172.16.115.2",
-            "prefix": 24,
-            "virtual_ip": "172.16.115.1",
-            "eth_int_host": 5
-          }
-        ]
-      },
-      "leaf2": {
-        "ansible_host": "192.168.28.23",
-        "mgmt_ip": "192.168.28.23",
-        "svis": [
-          {
-            "vlan_id": 3,
-            "ip": "172.16.115.3",
-            "prefix": 24,
-            "virtual_ip": "172.16.115.1",
-            "eth_int_host": 5
-          }
-        ]
-      },
-      "leaf3": {
-        "ansible_host": "192.168.28.24",
-        "mgmt_ip": "192.168.28.24",
-        "svis": [
-          {
-            "vlan_id": 6,
-            "ip": "172.16.116.2",
-            "prefix": 24,
-            "virtual_ip": "172.16.116.1",
-            "eth_int_host": 5
-          }
-        ]
-      },
-      "leaf4": {
-        "ansible_host": "192.168.28.25",
-        "mgmt_ip": "192.168.28.25",
-        "svis": [
-          {
-            "vlan_id": 6,
-            "ip": "172.16.116.3",
-            "prefix": 24,
-            "virtual_ip": "172.16.116.1",
-            "eth_int_host": 5
-          }
-        ]
-      },
-      "leaf5": {
-        "ansible_host": "192.168.28.28",
-        "mgmt_ip": "192.168.28.28",
-        "svis": [
-          {
-            "vlan_id": 9,
-            "ip": "172.16.117.2",
-            "prefix": 24,
-            "virtual_ip": "172.16.117.1",
-            "eth_int_host": 5
-          }
-        ]
-      },
-      "leaf6": {
-        "ansible_host": "192.168.28.29",
-        "mgmt_ip": "192.168.28.29",
-        "svis": [
-          {
-            "vlan_id": 9,
-            "ip": "172.16.117.3",
-            "prefix": 24,
-            "virtual_ip": "172.16.117.1",
-            "eth_int_host": 5
-          }
-        ]
-      }
-    },
-    "hosts": {
-      "host1": {
-        "ansible_host": "192.168.28.26",
-        "mgmt_ip": "192.168.28.26",
-        "po_id": 10,
-        "po_ip": "172.16.115.100/24",
-        "eth_po_first": 1,
-        "eth_po_second": 2,
-        "route": "ip route 172.16.116.0/24 172.16.115.1"
-      },
-      "host2": {
-        "ansible_host": "192.168.28.27",
-        "mgmt_ip": "192.168.28.27",
-        "po_id": 10,
-        "po_ip": "172.16.116.100/24",
-        "eth_po_first": 1,
-        "eth_po_second": 2,
-        "route": "ip route 172.16.115.0/24 172.16.116.1"
-      },
-      "host3": {
+      "dc2-leaf-1": {
         "ansible_host": "192.168.28.30",
         "mgmt_ip": "192.168.28.30",
-        "po_id": 10,
-        "po_ip": "172.16.117.100/24",
-        "eth_po_first": 1,
-        "eth_po_second": 2,
-        "route": "ip route 172.16.115.0/24 172.16.117.1"
+        "lldp_host_ports": [
+          {
+            "eth": 5,
+            "neighbor": "linux-server-5",
+            "type": "unknown"
+          },
+          {
+            "eth": 6,
+            "neighbor": "dc1-leaf-5",
+            "type": "unknown"
+          }
+        ],
+        "is_border_leaf": true,
+        "dci_links": [],
+        "lldp_dci_ports": [
+          {
+            "eth": 5,
+            "neighbor": "linux-server-5",
+            "neighbor_mac": "0050.0000.1300"
+          },
+          {
+            "eth": 6,
+            "neighbor": "dc1-leaf-5",
+            "neighbor_mac": "5000.0043.40cf"
+          }
+        ],
+        "svis": []
+      },
+      "dc2-leaf-2": {
+        "ansible_host": "192.168.28.31",
+        "mgmt_ip": "192.168.28.31",
+        "lldp_host_ports": [
+          {
+            "eth": 5,
+            "neighbor": "linux-server-5",
+            "type": "unknown"
+          },
+          {
+            "eth": 6,
+            "neighbor": "dc1-leaf-6",
+            "type": "unknown"
+          }
+        ],
+        "is_border_leaf": true,
+        "dci_links": [],
+        "lldp_dci_ports": [
+          {
+            "eth": 5,
+            "neighbor": "linux-server-5",
+            "neighbor_mac": "0050.0000.1300"
+          },
+          {
+            "eth": 6,
+            "neighbor": "dc1-leaf-6",
+            "neighbor_mac": "5000.00d8.ac19"
+          }
+        ],
+        "svis": []
+      },
+      "dc2-leaf-3": {
+        "ansible_host": "192.168.28.32",
+        "mgmt_ip": "192.168.28.32",
+        "lldp_host_ports": [
+          {
+            "eth": 5,
+            "neighbor": "dc2-isn-2",
+            "type": "unknown"
+          }
+        ],
+        "is_border_leaf": true,
+        "dci_links": [],
+        "lldp_dci_ports": [
+          {
+            "eth": 5,
+            "neighbor": "dc2-isn-2",
+            "neighbor_mac": "5000.0042.0717"
+          }
+        ],
+        "svis": []
+      },
+      "dc2-leaf-4": {
+        "ansible_host": "192.168.28.33",
+        "mgmt_ip": "192.168.28.33",
+        "lldp_host_ports": [
+          {
+            "eth": 5,
+            "neighbor": "dc2-isn-2",
+            "type": "unknown"
+          }
+        ],
+        "is_border_leaf": true,
+        "dci_links": [],
+        "lldp_dci_ports": [
+          {
+            "eth": 5,
+            "neighbor": "dc2-isn-2",
+            "neighbor_mac": "5000.0042.0717"
+          }
+        ],
+        "svis": []
       }
-    }
+    },
+    "hosts": {}
   },
   "interconnect_links": [
     {
       "spine": 1,
       "leaf": 1,
-      "spine_eth": 1,
-      "leaf_eth": 1
-    },
-    {
-      "spine": 1,
-      "leaf": 2,
       "spine_eth": 3,
       "leaf_eth": 1
     },
     {
       "spine": 1,
-      "leaf": 3,
+      "leaf": 1,
+      "spine_eth": 6,
+      "leaf_eth": 1
+    },
+    {
+      "spine": 1,
+      "leaf": 2,
       "spine_eth": 4,
+      "leaf_eth": 1
+    },
+    {
+      "spine": 1,
+      "leaf": 2,
+      "spine_eth": 5,
+      "leaf_eth": 1
+    },
+    {
+      "spine": 1,
+      "leaf": 3,
+      "spine_eth": 1,
       "leaf_eth": 1
     },
     {
       "spine": 1,
       "leaf": 4,
       "spine_eth": 2,
-      "leaf_eth": 2
-    },
-    {
-      "spine": 1,
-      "leaf": 5,
-      "spine_eth": 5,
-      "leaf_eth": 1
-    },
-    {
-      "spine": 1,
-      "leaf": 6,
-      "spine_eth": 6,
       "leaf_eth": 1
     },
     {
       "spine": 2,
       "leaf": 1,
-      "spine_eth": 2,
+      "spine_eth": 6,
       "leaf_eth": 2
     },
     {
       "spine": 2,
       "leaf": 2,
-      "spine_eth": 3,
-      "leaf_eth": 2
-    },
-    {
-      "spine": 2,
-      "leaf": 3,
-      "spine_eth": 4,
-      "leaf_eth": 2
-    },
-    {
-      "spine": 2,
-      "leaf": 4,
-      "spine_eth": 1,
-      "leaf_eth": 1
-    },
-    {
-      "spine": 2,
-      "leaf": 5,
       "spine_eth": 5,
       "leaf_eth": 2
     },
     {
       "spine": 2,
-      "leaf": 6,
-      "spine_eth": 6,
+      "leaf": 3,
+      "spine_eth": 1,
+      "leaf_eth": 2
+    },
+    {
+      "spine": 2,
+      "leaf": 4,
+      "spine_eth": 2,
       "leaf_eth": 2
     }
   ]

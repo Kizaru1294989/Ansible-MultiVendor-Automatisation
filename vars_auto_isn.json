@@ -1,0 +1,163 @@
+{
+  "dc_name": "isn",
+  "isn_asn": 65100,
+  "isn_all": [
+    {
+      "ip": "192.168.28.37",
+      "hostname": "dc1-isn-1",
+      "role": "unknown",
+      "chassis_mac": "5000.003b.34d4",
+      "neighbors": [
+        {
+          "local_intf": "Ethernet1",
+          "local_eth": 1,
+          "remote_hostname": "dc2-isn-2",
+          "remote_mac": "5000.0042.0717",
+          "remote_intf": "\"Ethernet1\"",
+          "remote_eth": 1
+        },
+        {
+          "local_intf": "Ethernet2",
+          "local_eth": 2,
+          "remote_hostname": "dc1-leaf-6",
+          "remote_mac": "5000.00d8.ac19",
+          "remote_intf": "\"Ethernet5\"",
+          "remote_eth": 5
+        },
+        {
+          "local_intf": "Ethernet3",
+          "local_eth": 3,
+          "remote_hostname": "dc1-leaf-5",
+          "remote_mac": "5000.0043.40cf",
+          "remote_intf": "\"Ethernet5\"",
+          "remote_eth": 5
+        }
+      ]
+    },
+    {
+      "ip": "192.168.28.38",
+      "hostname": "dc2-isn-2",
+      "role": "unknown",
+      "chassis_mac": "5000.0042.0717",
+      "neighbors": [
+        {
+          "local_intf": "Ethernet1",
+          "local_eth": 1,
+          "remote_hostname": "dc1-isn-1",
+          "remote_mac": "5000.003b.34d4",
+          "remote_intf": "\"Ethernet1\"",
+          "remote_eth": 1
+        },
+        {
+          "local_intf": "Ethernet2",
+          "local_eth": 2,
+          "remote_hostname": "dc2-leaf-3",
+          "remote_mac": "5000.0026.100e",
+          "remote_intf": "\"Ethernet5\"",
+          "remote_eth": 5
+        },
+        {
+          "local_intf": "Ethernet3",
+          "local_eth": 3,
+          "remote_hostname": "dc2-leaf-4",
+          "remote_mac": "5000.0099.6257",
+          "remote_intf": "\"Ethernet5\"",
+          "remote_eth": 5
+        }
+      ]
+    }
+  ],
+  "isn_vars": {
+    "dc1-isn-1": {
+      "loopback0_ip": "172.16.100.1",
+      "bgp_asn": 65100,
+      "mgmt_ip": "192.168.28.37",
+      "inter_isn_ip": "172.16.250.0",
+      "inter_isn_prefix": 31,
+      "neighbors": [
+        {
+          "dc": "dc1",
+          "leaf_name": "dc1-leaf-5",
+          "leaf_asn": 65003,
+          "leaf_loopback0": "172.16.0.15",
+          "isn_local_ip": "10.0.0.25",
+          "leaf_ip": "10.0.0.24",
+          "prefix": 31,
+          "rt_import": "1:9999",
+          "rt_export": "1:9999",
+          "isn_eth": 3,
+          "isn_loopback0": "172.16.100.1"
+        },
+        {
+          "dc": "dc1",
+          "leaf_name": "dc1-leaf-6",
+          "leaf_asn": 65003,
+          "leaf_loopback0": "172.16.0.16",
+          "isn_local_ip": "10.0.0.27",
+          "leaf_ip": "10.0.0.26",
+          "prefix": 31,
+          "rt_import": "1:9999",
+          "rt_export": "1:9999",
+          "isn_eth": 2,
+          "isn_loopback0": "172.16.100.1"
+        }
+      ]
+    },
+    "dc2-isn-2": {
+      "loopback0_ip": "172.16.100.2",
+      "bgp_asn": 65100,
+      "mgmt_ip": "192.168.28.38",
+      "inter_isn_ip": "172.16.250.1",
+      "inter_isn_prefix": 31,
+      "neighbors": [
+        {
+          "dc": "dc2",
+          "leaf_name": "dc2-leaf-3",
+          "leaf_asn": 64002,
+          "leaf_loopback0": "172.24.0.13",
+          "isn_local_ip": "20.0.0.21",
+          "leaf_ip": "20.0.0.20",
+          "prefix": 31,
+          "rt_import": "1:9999",
+          "rt_export": "1:9999",
+          "isn_eth": 2,
+          "isn_loopback0": "172.16.100.2"
+        },
+        {
+          "dc": "dc2",
+          "leaf_name": "dc2-leaf-4",
+          "leaf_asn": 64002,
+          "leaf_loopback0": "172.24.0.14",
+          "isn_local_ip": "20.0.0.23",
+          "leaf_ip": "20.0.0.22",
+          "prefix": 31,
+          "rt_import": "1:9999",
+          "rt_export": "1:9999",
+          "isn_eth": 3,
+          "isn_loopback0": "172.16.100.2"
+        }
+      ]
+    }
+  },
+  "inventory": {
+    "arista_vars": {
+      "ansible_user": "cvpadmin",
+      "ansible_password": "Exaprobe1234",
+      "ansible_connection": "httpapi",
+      "ansible_network_os": "eos",
+      "ansible_httpapi_use_ssl": true,
+      "ansible_httpapi_validate_certs": false,
+      "ansible_httpapi_port": 443
+    },
+    "isn_devices": {
+      "dc1-isn-1": {
+        "ansible_host": "192.168.28.37",
+        "mgmt_ip": "192.168.28.37"
+      },
+      "dc2-isn-2": {
+        "ansible_host": "192.168.28.38",
+        "mgmt_ip": "192.168.28.38"
+      }
+    }
+  }
+}

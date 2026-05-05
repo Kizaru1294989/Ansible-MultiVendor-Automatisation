@@ -1,0 +1,79 @@
+---
+# playbooks/isn_deploy.yml
+# ------------------------
+# Deploie la configuration ISN via template Jinja2
+# Meme logique que deploy.yml pour les DCs
+
+- name: Deploiement configuration ISN
+  hosts: "{{ isn_target | default('isn_devices') }}"
+  gather_facts: false
+  tags: evpn
+
+  vars:
+    project_dir: "{{ playbook_dir | dirname }}"
+
+  tasks:
+
+    - name: Sauvegarder la configuration actuelle
+      arista.eos.eos_command:
+        commands: show running-config
+      register: backup_output
+
+    - name: Creer le dossier backup
+      ansible.builtin.file:
+        path: "{{ project_dir }}/backups/{{ inventory_hostname }}"
+        state: directory
+      delegate_to: localhost
+
+    - name: Sauvegarder localement
+      ansible.builtin.copy:
+        content: "{{ backup_output.stdout[0] }}"
+        dest: "{{ project_dir }}/backups/{{ inventory_hostname }}/backup_{{ lookup('pipe', 'date +%Y-%m-%d_%H-%M-%S') }}.conf"
+      delegate_to: localhost
+
+    - name: Generer la config ISN depuis le template
+      ansible.builtin.template:
+        src: "{{ project_dir }}/roles/arista/arista_vxlan-evpn_l3/templates/isn_eos_config.j2"
+        dest: "/tmp/{{ inventory_hostname }}-isn.conf"
+      delegate_to: localhost
+
+    - name: Appliquer la configuration ISN
+      arista.eos.eos_config:
+        src: "/tmp/{{ inventory_hostname }}-isn.conf"
+
+    - name: Attendre la convergence BGP
+      ansible.builtin.pause:
+        seconds: 10
+
+    - name: Verifier BGP summary
+      arista.eos.eos_command:
+        commands:
+          - show bgp summary
+          - show bgp evpn summary
+      register: bgp_output
+      ignore_errors: true
+
+    - name: Afficher BGP summary
+      ansible.builtin.debug:
+        msg: "{{ bgp_output.stdout_lines }}"
+      when:
+        - bgp_output is defined
+        - bgp_output.stdout_lines is defined
+
+    - name: Verifier sessions vers border leafs
+      arista.eos.eos_command:
+        commands:
+          - "show bgp neighbors {{ item.leaf_ip }} | include BGP state"
+      loop: "{{ neighbors | default([]) }}"
+      loop_control:
+        label: "{{ item.leaf_name }} ({{ item.leaf_ip }})"
+      register: neighbor_check
+      ignore_errors: true
+
+    - name: Afficher statut sessions border leafs
+      ansible.builtin.debug:
+        msg: "{{ item.item.leaf_name }} ({{ item.item.leaf_ip }}) : {{ item.stdout[0] | default('N/A') }}"
+      loop: "{{ neighbor_check.results | default([]) }}"
+      loop_control:
+        label: "{{ item.item.leaf_name }}"
+      when: neighbor_check is defined

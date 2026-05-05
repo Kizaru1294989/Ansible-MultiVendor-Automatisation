@@ -134,6 +134,12 @@
         "remote_hostname": "host-1",
         "remote_interface": "\"Ethernet1\"",
         "remote_chassis_mac": "5000.00f6.ad37"
+      },
+      {
+        "local_interface": "Ethernet6",
+        "remote_hostname": "linux-server-1",
+        "remote_interface": "0050.0000.1700",
+        "remote_chassis_mac": "0050.0000.1700"
       }
     ]
   },
@@ -176,6 +182,12 @@
         "remote_hostname": "host-1",
         "remote_interface": "\"Ethernet2\"",
         "remote_chassis_mac": "5000.00f6.ad37"
+      },
+      {
+        "local_interface": "Ethernet6",
+        "remote_hostname": "linux-server-1",
+        "remote_interface": "0050.0000.1701",
+        "remote_chassis_mac": "0050.0000.1700"
       }
     ]
   },
@@ -218,6 +230,12 @@
         "remote_hostname": "host-2",
         "remote_interface": "\"Ethernet1\"",
         "remote_chassis_mac": "5000.001b.5e8d"
+      },
+      {
+        "local_interface": "Ethernet6",
+        "remote_hostname": "linux-server-3",
+        "remote_interface": "0050.0000.1600",
+        "remote_chassis_mac": "0050.0000.1600"
       }
     ]
   },
@@ -260,6 +278,12 @@
         "remote_hostname": "host-2",
         "remote_interface": "\"Ethernet2\"",
         "remote_chassis_mac": "5000.001b.5e8d"
+      },
+      {
+        "local_interface": "Ethernet6",
+        "remote_hostname": "linux-server-3",
+        "remote_interface": "0050.0000.1601",
+        "remote_chassis_mac": "0050.0000.1600"
       }
     ]
   },
