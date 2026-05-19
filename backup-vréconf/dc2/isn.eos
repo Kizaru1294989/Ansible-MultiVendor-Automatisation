@@ -1,0 +1,114 @@
+! Command: show running-config
+! device: DC2-ISN-2 (vEOS-lab, EOS-4.33.2F)
+!
+! boot system flash:/vEOS-lab.swi
+!
+enable password sha512 $6$LqGyROaoV5iZaIck$dPqC6nkD2NrohZEBa3IKRJA73BauIn4ediXlH18weQ3ApfTLCO7YE2kRixo9iWyMAgI7tBTK1wRAm90/kUboX.
+no aaa root
+!
+username cvpadmin privilege 15 secret sha512 $6$/M6tySe.0CtB5CZv$rVY5wujDkMsPcvmGQhniPVnkmRBbDT/O3w1WW/hpOGa3CSFXQ5ClwEnUvg0uxxZil0l8MmE14Oq710jPohAl41
+username scp privilege 15 shell /bin/bash secret sha512 $6$5wgDdqbVId68Wr3H$SkH/PcsbKOcXZIXXsmeoDIv17cK77oTQifzDNGV3AOKjA9XmNWfNtGUd09gCRmYJISeF9AI86AImLdfGbB4En/
+!
+management api http-commands
+   protocol http
+   no shutdown
+   !
+   vrf managment
+      no shutdown
+!
+no service interface inactive port-id allocation disabled
+!
+transceiver qsfp default-mode 4x10G
+!
+service routing protocols model multi-agent
+!
+hostname DC2-ISN-2
+!
+spanning-tree mode mstp
+no spanning-tree vlan-id 4094
+!
+system l1
+   unsupported speed action error
+   unsupported error-correction action error
+!
+vrf instance managment
+!
+aaa authentication login console local
+aaa authorization exec default local
+!
+interface Ethernet1
+   no switchport
+   ip address 172.0.0.1/31
+!
+interface Ethernet2
+   no switchport
+   ip address 172.16.100.17/31
+!
+interface Ethernet3
+   no switchport
+   ip address 172.16.100.19/31
+!
+interface Ethernet4
+!
+interface Ethernet5
+!
+interface Ethernet6
+!
+interface Ethernet7
+!
+interface Ethernet8
+!
+interface Loopback0
+   ip address 172.16.200.200/32
+!
+interface Management1
+   vrf managment
+   ip address 192.168.28.38/24
+!
+ip routing
+no ip routing vrf managment
+!
+ip route vrf managment 0.0.0.0/0 192.168.28.254
+!
+router bgp 65100
+   router-id 172.16.200.200
+   neighbor DC2-BL peer group
+   neighbor DC2-BL remote-as 64002
+   neighbor DC2-BL next-hop-unchanged
+   neighbor DC2-BL update-source Loopback0
+   neighbor DC2-BL ebgp-multihop
+   neighbor DC2-BL send-community extended
+   neighbor DC2-BL-underlay peer group
+   neighbor DC2-BL-underlay remote-as 64002
+   neighbor IBGP peer group
+   neighbor IBGP remote-as 65100
+   neighbor IBGP next-hop-unchanged
+   neighbor IBGP update-source Loopback0
+   neighbor IBGP send-community extended
+   neighbor IBGP-underlay peer group
+   neighbor IBGP-underlay remote-as 65100
+   neighbor 172.0.0.0 peer group IBGP-underlay
+   neighbor 172.16.100.16 peer group DC2-BL-underlay
+   neighbor 172.16.100.18 peer group DC2-BL-underlay
+   neighbor 172.16.100.100 peer group IBGP
+   neighbor 172.32.0.13 peer group DC2-BL
+   neighbor 172.32.0.14 peer group DC2-BL
+   redistribute connected
+   !
+   address-family evpn
+      neighbor DC2-BL activate
+      neighbor IBGP activate
+   !
+   address-family ipv4
+      no neighbor DC2-BL activate
+      neighbor DC2-BL-underlay activate
+      neighbor IBGP-underlay activate
+!
+router multicast
+   ipv4
+      software-forwarding kernel
+   !
+   ipv6
+      software-forwarding kernel
+!
+end

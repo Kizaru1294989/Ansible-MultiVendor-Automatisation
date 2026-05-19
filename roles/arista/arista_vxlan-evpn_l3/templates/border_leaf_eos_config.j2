@@ -67,7 +67,7 @@ interface Vxlan1
 {% for svi in svis | default([]) %}
    vxlan vlan {{ svi.vlan_id }} vni {{ svi.vni }}
 {% endfor %}
-   vxlan vrf {{ vrf_customer_names }} vni 1001
+   vxlan vrf {{ vrf_customer_names }} vni {{ vrf_vni | default(1001) }}
 !
 {% for link in interconnects if link.leaf == leaf_id %}
 interface Ethernet{{ link.leaf_eth }}
@@ -88,12 +88,6 @@ ip routing vrf {{ vrf_customer_names }}
 !
 ip virtual-router mac-address {{ virtual_router_mac }}
 !
-ip prefix-list rt-conn
-   seq 10 permit {{ loopback0_ip }}/32
-!
-route-map rt-conn permit 10
-   match ip address prefix-list rt-conn
-!
 router bgp {{ bgp_asn }}
    router-id {{ loopback0_ip }}
    maximum-paths {{ bgp_max_paths | default(4) }} ecmp {{ bgp_max_paths | default(4) }}
@@ -101,22 +95,21 @@ router bgp {{ bgp_asn }}
    neighbor {{ mlag_peer_ip }} next-hop-self
    neighbor {{ mlag_peer_ip }} maximum-routes {{ bgp_max_routes | default(12000) }}
    !
-   {# Peer group underlay spines - IP physique #}
    neighbor {{ peer_group }} peer group
    neighbor {{ peer_group }} bfd
    neighbor {{ peer_group }} send-community
    neighbor {{ peer_group }} maximum-routes {{ bgp_max_routes | default(12000) }}
    !
-   {# Peer group EVPN spines - loopback to loopback #}
    neighbor {{ peer_group_evpn }} peer group
    neighbor {{ peer_group_evpn }} next-hop-unchanged
    neighbor {{ peer_group_evpn }} update-source Loopback0
    neighbor {{ peer_group_evpn }} ebgp-multihop
    neighbor {{ peer_group_evpn }} send-community extended
    neighbor {{ peer_group_evpn }} maximum-routes 0
-{% for dci in dci_links | default([]) %}
    !
-   {# Peer group EVPN vers ISN - loopback to loopback - miroir de DC1-BL cote ISN #}
+{% for dci in dci_links | default([]) %}
+{% if dci.isn_loopback0 is defined and dci.isn_loopback0 %}
+   {# Peer group EVPN vers ISN - genere seulement si loopback ISN connue #}
    neighbor ISN-EVPN-{{ loop.index }} peer group
    neighbor ISN-EVPN-{{ loop.index }} remote-as {{ dci.remote_asn }}
    neighbor ISN-EVPN-{{ loop.index }} next-hop-unchanged
@@ -124,12 +117,12 @@ router bgp {{ bgp_asn }}
    neighbor ISN-EVPN-{{ loop.index }} ebgp-multihop
    neighbor ISN-EVPN-{{ loop.index }} send-community extended
    !
-   {# Peer group underlay vers ISN - IP physique /31 #}
+{% endif %}
+   {# Peer group underlay vers ISN - toujours genere #}
    neighbor ISN-UNDERLAY-{{ loop.index }} peer group
    neighbor ISN-UNDERLAY-{{ loop.index }} remote-as {{ dci.remote_asn }}
-   no neighbor ISN-UNDERLAY-{{ loop.index }} next-hop-unchanged
-{% endfor %}
    !
+{% endfor %}
 {% for link in interconnects if link.leaf == leaf_id %}
    neighbor {{ link.spine_ip }} peer group {{ peer_group }}
    neighbor {{ link.spine_ip }} remote-as {{ bgp_asn_spines }}
@@ -137,16 +130,14 @@ router bgp {{ bgp_asn }}
    neighbor {{ hostvars[link.spine_name].loopback0_ip }} remote-as {{ bgp_asn_spines }}
 {% endfor %}
 {% for dci in dci_links | default([]) %}
-   {# EVPN sur loopback ISN #}
-{% if dci.isn_loopback0 is defined %}
+{% if dci.isn_loopback0 is defined and dci.isn_loopback0 %}
    neighbor {{ dci.isn_loopback0 }} peer group ISN-EVPN-{{ loop.index }}
 {% endif %}
-   {# Underlay sur IP physique ISN #}
    neighbor {{ dci.remote_ip }} peer group ISN-UNDERLAY-{{ loop.index }}
    neighbor {{ dci.remote_ip }} description DCI-UNDERLAY-{{ dci.neighbor | upper }}
 {% endfor %}
    !
-   redistribute connected route-map rt-conn
+   redistribute connected
    !
 {% for svi in svis | default([]) %}
    vlan {{ svi.vlan_id }}
@@ -158,15 +149,18 @@ router bgp {{ bgp_asn }}
    address-family evpn
       neighbor {{ peer_group_evpn }} activate
 {% for dci in dci_links | default([]) %}
-{% if dci.isn_loopback0 is defined %}
-      neighbor {{ dci.isn_loopback0 }} activate
+{% if dci.isn_loopback0 is defined and dci.isn_loopback0 %}
+      {# Activation via peer group, pas l'IP directe #}
+      neighbor ISN-EVPN-{{ loop.index }} activate
 {% endif %}
 {% endfor %}
    !
    address-family ipv4
       no neighbor {{ peer_group_evpn }} activate
 {% for dci in dci_links | default([]) %}
+{% if dci.isn_loopback0 is defined and dci.isn_loopback0 %}
       no neighbor ISN-EVPN-{{ loop.index }} activate
+{% endif %}
       neighbor ISN-UNDERLAY-{{ loop.index }} activate
 {% endfor %}
 {% for net in bgp_networks | default([]) %}
@@ -175,12 +169,10 @@ router bgp {{ bgp_asn }}
    !
    vrf {{ vrf_customer_names }}
       rd {{ loopback0_ip }}:{{ route_distinguisher }}
-      route-target import 1:1001
-      route-target export 1:1001
-{% for dci in dci_links | default([]) %}
-      route-target import {{ dci.rt_import }}
-      route-target export {{ dci.rt_export }}
-{% endfor %}
+      route-target import 1:{{ vrf_vni | default(1001) }}
+      route-target export 1:{{ vrf_vni | default(1001) }}
+      route-target import 1:9999
+      route-target export 1:9999
       redistribute connected
       redistribute static
 !

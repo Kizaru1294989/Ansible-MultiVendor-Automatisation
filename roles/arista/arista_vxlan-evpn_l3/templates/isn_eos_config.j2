@@ -34,7 +34,7 @@ router bgp {{ bgp_asn }}
 {% set dc_neighbors = neighbors | selectattr('dc', 'equalto', dc_name) | list %}
 {% set dc_asn = dc_neighbors[0].leaf_asn %}
    !
-   {# Peer group EVPN vers border leafs {{ dc_name | upper }} - loopback to loopback #}
+   {# Peer group EVPN vers border leafs DC #}
    neighbor {{ dc_name | upper }}-BL peer group
    neighbor {{ dc_name | upper }}-BL remote-as {{ dc_asn }}
    neighbor {{ dc_name | upper }}-BL next-hop-unchanged
@@ -42,30 +42,41 @@ router bgp {{ bgp_asn }}
    neighbor {{ dc_name | upper }}-BL ebgp-multihop
    neighbor {{ dc_name | upper }}-BL send-community extended
    !
-   {# Peer group underlay vers border leafs {{ dc_name | upper }} - IP physique #}
+   {# Peer group underlay vers border leafs DC - IP physique /31 #}
    neighbor {{ dc_name | upper }}-BL-underlay peer group
    neighbor {{ dc_name | upper }}-BL-underlay remote-as {{ dc_asn }}
-   no neighbor {{ dc_name | upper }}-BL-underlay next-hop-unchanged
 {% endfor %}
+{% if inter_isn_ip is defined %}
+   !
+   {# Peer group overlay inter-ISN - loopback to loopback #}
+   neighbor ISN-OVERLAY peer group
+   neighbor ISN-OVERLAY remote-as {{ bgp_asn }}
+   neighbor ISN-OVERLAY next-hop-unchanged
+   neighbor ISN-OVERLAY update-source Loopback0
+   neighbor ISN-OVERLAY ebgp-multihop 3
+   neighbor ISN-OVERLAY send-community extended
+   !
+   {# Peer group underlay inter-ISN - next-hop-self pour resoudre les loopbacks distantes #}
+   neighbor ISN-UNDERLAY peer group
+   neighbor ISN-UNDERLAY remote-as {{ bgp_asn }}
+   neighbor ISN-UNDERLAY next-hop-self
+{% endif %}
 {% for nbr in neighbors | default([]) %}
-   {# EVPN sur loopback border leaf #}
 {% if nbr.leaf_loopback0 is defined %}
    neighbor {{ nbr.leaf_loopback0 }} peer group {{ nbr.dc | upper }}-BL
 {% endif %}
-   {# Underlay sur IP physique /31 #}
    neighbor {{ nbr.leaf_ip }} peer group {{ nbr.dc | upper }}-BL-underlay
 {% endfor %}
+{% if inter_isn_ip is defined %}
 {% for dev in hostvars.values() %}
 {% if dev.inventory_hostname is defined and dev.inventory_hostname != inventory_hostname and dev.inter_isn_ip is defined %}
-   !
-   {# Session inter-ISN - IP physique #}
-   neighbor {{ dev.inter_isn_ip }} remote-as {{ bgp_asn }}
-   neighbor {{ dev.inter_isn_ip }} description ISN-{{ dev.inventory_hostname | upper }}
-   neighbor {{ dev.inter_isn_ip }} next-hop-unchanged
-   neighbor {{ dev.inter_isn_ip }} send-community extended
-   neighbor {{ dev.inter_isn_ip }} ebgp-multihop 3
+   {# Overlay inter-ISN sur loopback #}
+   neighbor {{ dev.loopback0_ip }} peer group ISN-OVERLAY
+   {# Underlay inter-ISN sur IP physique #}
+   neighbor {{ dev.inter_isn_ip }} peer group ISN-UNDERLAY
 {% endif %}
 {% endfor %}
+{% endif %}
    !
    redistribute connected route-map LOOPBACK
    !
@@ -74,20 +85,17 @@ router bgp {{ bgp_asn }}
 {% for dc_name in neighbors | map(attribute='dc') | unique | list %}
       neighbor {{ dc_name | upper }}-BL activate
 {% endfor %}
-{% for dev in hostvars.values() %}
-{% if dev.inventory_hostname is defined and dev.inventory_hostname != inventory_hostname and dev.inter_isn_ip is defined %}
-      neighbor {{ dev.inter_isn_ip }} activate
+{% if inter_isn_ip is defined %}
+      neighbor ISN-OVERLAY activate
 {% endif %}
-{% endfor %}
    !
    address-family ipv4
 {% for dc_name in neighbors | map(attribute='dc') | unique | list %}
       no neighbor {{ dc_name | upper }}-BL activate
       neighbor {{ dc_name | upper }}-BL-underlay activate
 {% endfor %}
-{% for dev in hostvars.values() %}
-{% if dev.inventory_hostname is defined and dev.inventory_hostname != inventory_hostname and dev.inter_isn_ip is defined %}
-      no neighbor {{ dev.inter_isn_ip }} activate
+{% if inter_isn_ip is defined %}
+      no neighbor ISN-OVERLAY activate
+      neighbor ISN-UNDERLAY activate
 {% endif %}
-{% endfor %}
 !

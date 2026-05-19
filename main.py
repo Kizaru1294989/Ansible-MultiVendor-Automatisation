@@ -13,6 +13,23 @@ Usage :
   python3 main.py --discover -> decouverte seule
   python3 main.py --generate -> generation seule
   python3 main.py --generate --dc dc1
+
+COHERENCE INTER-DC :
+  - VNI L2/L3 identiques sur tous les DCs.
+  - Loopback0 ISN demandee pendant ask_dci_config() si connue,
+    sinon obligatoirement lors du --isn.
+  - --isn met a jour isn_loopback0 dans les dci_links des BL
+    et regenere les inventories DC → BL obtiennent le peer group
+    ISN-EVPN complet apres --isn.
+
+WORKFLOW RECOMMANDE :
+  1. python3 main.py          (DC1) → BL sans EVPN ISN si loopback inconnue
+  2. python3 main.py          (DC2)
+  3. python3 main.py --isn    → saisie loopbacks ISN (obligatoire)
+                                → regenere DC1+DC2 avec EVPN ISN complet
+  4. ./run.sh evpn dc1
+  5. ./run.sh evpn dc2
+  6. ./run.sh evpn isn
 """
 
 import argparse
@@ -57,13 +74,28 @@ def ask_input(label: str, default=None, example=None) -> str:
         val = input(f"    {label} [{default}] : ").strip()
         return val if val else str(default)
     if example is not None:
-        val = input(f"    {label} [{example}] : ").strip()
-        return val if val else str(example)
+        val = input(f"    {label} (ex: {example}) : ").strip()
+        return val if val else ""
     while True:
         val = input(f"    {label} : ").strip()
         if val:
             return val
         print("      Valeur obligatoire.")
+
+def ask_input_required(label: str, example: str = None) -> str:
+    """Saisie obligatoire — boucle jusqu'a obtenir une valeur non vide."""
+    hint = f" (ex: {example})" if example else ""
+    while True:
+        val = input(f"    {label}{hint} : ").strip()
+        if val:
+            return val
+        print("      Valeur obligatoire.")
+
+def ask_input_optional(label: str, example=None) -> str:
+    """Saisie optionnelle — retourne None si vide."""
+    hint = f" (ex: {example})" if example else ""
+    val = input(f"    {label}{hint} (Entree=passer) : ").strip()
+    return val if val else None
 
 def ask_int(label: str, default=None, example=None) -> int:
     while True:
@@ -83,6 +115,44 @@ def ask_network(label: str, example: str = "172.16.115.0/24") -> ipaddress.IPv4N
 def host_id(name: str) -> int:
     nums = re.findall(r"\d+", name)
     return int(nums[-1]) if nums else 0
+
+# ─── COHERENCE VNI INTER-DC ───────────────────────────────────────────────────
+
+def load_vni_registry() -> tuple:
+    existing_files = sorted(glob.glob("vars_auto_*.json"))
+    if not existing_files:
+        return {}, None
+
+    vni_registry  = {}
+    vrf_vni_found = None
+
+    for fname in existing_files:
+        try:
+            data  = load_vars(fname)
+            leafs = data.get("inventory", {}).get("leafs", {})
+            for leaf_data in leafs.values():
+                for svi in leaf_data.get("svis", []):
+                    vlan_id = svi.get("vlan_id")
+                    vni     = svi.get("vni")
+                    if vlan_id and vni:
+                        if vlan_id in vni_registry and vni_registry[vlan_id] != vni:
+                            print(f"  AVERTISSEMENT : VLAN {vlan_id} VNI incoherent — {vni_registry[vlan_id]} conserve")
+                        else:
+                            vni_registry[vlan_id] = vni
+            vrf_vni = data.get("fabric", {}).get("vrf_vni")
+            if vrf_vni and not vrf_vni_found:
+                vrf_vni_found = vrf_vni
+        except Exception as e:
+            print(f"  Avertissement : {fname} : {e}")
+
+    if vni_registry:
+        print("\n  VNI L2 charges depuis DCs existants (coherence inter-DC) :")
+        for vlan_id, vni in sorted(vni_registry.items()):
+            print(f"    VLAN {vlan_id:5d} -> VNI {vni}")
+    if vrf_vni_found:
+        print(f"  VNI L3 VRF existant : {vrf_vni_found} (sera reutilise)")
+
+    return vni_registry, vrf_vni_found
 
 # ─── PARAMETRES DE CONNEXION ──────────────────────────────────────────────────
 
@@ -122,11 +192,12 @@ def ask_fabric_overrides(vars_auto: dict) -> dict:
         ("asn_spines",               "ASN spines"),
         ("asn_leafs_base",           "ASN leafs base"),
         ("vni_base",                 "VNI base"),
+        ("vrf_vni",                  "VNI L3 VRF (identique sur tous les DCs)"),
         ("route_distinguisher_base", "Route-distinguisher base"),
     ]
     for key, label in fields:
-        current = fab[key]
-        val = input(f"  {label:35s} [{current}] : ").strip()
+        current = fab.get(key, "")
+        val = input(f"  {label:50s} [{current}] : ").strip()
         if val:
             fab[key] = int(val) if isinstance(current, int) else val
     vars_auto["fabric"] = fab
@@ -187,7 +258,8 @@ def load_existing_dc_ips() -> dict:
 
 # ─── SAISIE SVIs PAR PAIRE MLAG ───────────────────────────────────────────────
 
-def ask_svis(vars_auto: dict, vlan_registry: dict = None) -> dict:
+def ask_svis(vars_auto: dict, vlan_registry: dict = None,
+             vni_registry: dict = None, vni_base: int = None) -> dict:
     leafs        = vars_auto["inventory"]["leafs"]
     sorted_leafs = sorted(leafs.keys(), key=lambda n: host_id(n))
     pairs        = [sorted_leafs[i:i+2] for i in range(0, len(sorted_leafs), 2)]
@@ -198,11 +270,16 @@ def ask_svis(vars_auto: dict, vlan_registry: dict = None) -> dict:
     print("  VIP    = .1 du reseau  (calculee automatiquement)")
     print("  leaf A = prochain host disponible")
     print("  leaf B = prochain host disponible")
-    print("  Meme VLAN sur plusieurs paires ou DCs -> IPs incrementees auto\n")
+    if vni_registry:
+        print("  VNI    = reutilises depuis DCs existants (coherence inter-DC)\n")
+    else:
+        print()
 
     nb_svis       = ask_int("  Nombre de SVIs par paire MLAG", default=1)
     vlan_registry = dict(vlan_registry) if vlan_registry else {}
+    vni_registry  = dict(vni_registry)  if vni_registry  else {}
     example_base  = ipaddress.ip_network("172.16.115.0/24", strict=False)
+    vni_base      = vni_base or vars_auto.get("fabric", {}).get("vni_base", 10000)
 
     for pair_idx, pair in enumerate(pairs):
         leaf_a      = pair[0]
@@ -248,6 +325,14 @@ def ask_svis(vars_auto: dict, vlan_registry: dict = None) -> dict:
             example_vlan = (pair_idx * nb_svis + i + 1) * 3
             vlan_id      = ask_int("vlan_id", example=example_vlan)
 
+            if vlan_id in vni_registry:
+                vni = vni_registry[vlan_id]
+                print(f"      -> VNI {vni} reutilise (coherence inter-DC)")
+            else:
+                vni = vni_base + vlan_id
+                vni_registry[vlan_id] = vni
+                print(f"      -> VNI {vni} calcule (vni_base {vni_base} + vlan {vlan_id})")
+
             if vlan_id in vlan_registry:
                 reg        = vlan_registry[vlan_id]
                 network    = reg["network"]
@@ -284,10 +369,10 @@ def ask_svis(vars_auto: dict, vlan_registry: dict = None) -> dict:
             eth_b = ask_int(f"port Ethernet {leaf_b} pour vlan {vlan_id}", default=default_eth_b) if leaf_b else None
 
             new_svis_a.append({"vlan_id": vlan_id, "ip": ip_a, "prefix": prefix,
-                                "virtual_ip": virtual_ip, "eth_int_host": eth_a})
+                                "virtual_ip": virtual_ip, "eth_int_host": eth_a, "vni": vni})
             if leaf_b and ip_b:
                 new_svis_b.append({"vlan_id": vlan_id, "ip": ip_b, "prefix": prefix,
-                                   "virtual_ip": virtual_ip, "eth_int_host": eth_b})
+                                   "virtual_ip": virtual_ip, "eth_int_host": eth_b, "vni": vni})
 
         vars_auto["inventory"]["leafs"][leaf_a]["svis"] = new_svis_a
         if leaf_b:
@@ -403,6 +488,10 @@ def ask_border_leaf_selection(vars_auto: dict) -> dict:
 # ─── SAISIE DCI / BORDER LEAF ─────────────────────────────────────────────────
 
 def ask_dci_config(vars_auto: dict) -> dict:
+    """
+    OPTION 2 : Loopback0 ISN demandee ici si connue.
+    Si vide -> sera obligatoirement renseignee lors du --isn.
+    """
     leafs        = vars_auto["inventory"]["leafs"]
     border_leafs = {n: d for n, d in leafs.items() if d.get("is_border_leaf", False)}
 
@@ -412,6 +501,8 @@ def ask_dci_config(vars_auto: dict) -> dict:
     print("\n" + "═" * 60)
     print("  CONFIGURATION DCI / BORDER LEAFS")
     print("═" * 60)
+    print("  NOTE : La loopback0 ISN peut etre saisie maintenant si connue.")
+    print("         Si vide -> sera obligatoirement saisie lors du mode --isn.\n")
 
     fab          = vars_auto["fabric"]
     prefix       = fab["interconnect_prefix"]
@@ -423,7 +514,9 @@ def ask_dci_config(vars_auto: dict) -> dict:
 
     default_rt_import = "1:9999"
     default_rt_export = "1:9999"
-    default_vni_l3    = 5001
+    default_vni_l3    = vars_auto["fabric"].get("vrf_vni", 1001)
+    default_isn_lb0   = None
+    default_isn_asn   = None
 
     for leaf_name, leaf_data in sorted(border_leafs.items()):
         dci_ports = leaf_data.get("lldp_dci_ports", [])
@@ -434,6 +527,7 @@ def ask_dci_config(vars_auto: dict) -> dict:
         dci_links = []
         for port in dci_ports:
             print(f"\n  Lien DCI : Eth{port['eth']} -> {port['neighbor']}")
+
             auto_net  = ipaddress.ip_network(
                 f"{ipaddress.ip_address(next_net_int + dci_net_idx * step)}/{prefix}", strict=False)
             net_input = input(f"    reseau [{auto_net}] (Entree=auto) : ").strip()
@@ -457,21 +551,41 @@ def ask_dci_config(vars_auto: dict) -> dict:
             print(f"      -> IP locale   : {local_ip}/{chosen_prefix}")
             print(f"      -> IP ISN      : {remote_ip}/{chosen_prefix}")
 
-            asn_dci    = ask_int(f"ASN {port['neighbor']}", example=65100)
-            rt_import  = ask_input("RT import inter-DC", example=default_rt_import)
-            rt_export  = ask_input("RT export inter-DC", example=default_rt_export)
+            asn_dci    = ask_int(f"ASN {port['neighbor']}", example=default_isn_asn or 65100)
+            rt_import  = ask_input("RT import inter-DC", default=default_rt_import)
+            rt_export  = ask_input("RT export inter-DC", default=default_rt_export)
             vni_l3_dci = ask_int("VNI L3 inter-DC VRF", example=default_vni_l3)
+
+            isn_lb0 = ask_input_optional(
+                f"Loopback0 de {port['neighbor']}",
+                example=default_isn_lb0 or "172.16.100.1"
+            )
+            if isn_lb0:
+                print(f"      -> Loopback0 ISN : {isn_lb0} (peering EVPN genere immediatement)")
+                default_isn_lb0 = isn_lb0
+            else:
+                print(f"      -> Loopback0 ISN non renseignee (obligatoire lors du --isn)")
 
             default_rt_import = rt_import
             default_rt_export = rt_export
             default_vni_l3    = vni_l3_dci
+            default_isn_asn   = asn_dci
 
-            dci_links.append({
-                "eth": port["eth"], "neighbor": port["neighbor"],
-                "local_ip": local_ip, "remote_ip": remote_ip,
-                "prefix": chosen_prefix, "remote_asn": asn_dci,
-                "rt_import": rt_import, "rt_export": rt_export, "vni_l3": vni_l3_dci,
-            })
+            link = {
+                "eth":        port["eth"],
+                "neighbor":   port["neighbor"],
+                "local_ip":   local_ip,
+                "remote_ip":  remote_ip,
+                "prefix":     chosen_prefix,
+                "remote_asn": asn_dci,
+                "rt_import":  rt_import,
+                "rt_export":  rt_export,
+                "vni_l3":     vni_l3_dci,
+            }
+            if isn_lb0:
+                link["isn_loopback0"] = isn_lb0
+
+            dci_links.append(link)
             dci_net_idx += 1
 
         vars_auto["inventory"]["leafs"][leaf_name]["dci_links"] = dci_links
@@ -481,23 +595,10 @@ def ask_dci_config(vars_auto: dict) -> dict:
 # ─── MODE ISN ─────────────────────────────────────────────────────────────────
 
 def mode_isn():
-    """
-    Mode ISN — meme logique que mode_full() pour un DC :
-      1. Range IP mgmt ISN -> scan -> decouverte LLDP
-      2. Saisie interactive des variables reseau ISN
-         (loopback0, ASN, reseau inter-ISN)
-      3. Croisement avec les border leafs des DCs
-      4. Generation inventories/isn/ avec :
-         - hosts
-         - group_vars/all/ (bgp.yml, isn.yml)
-         - host_vars/<isn>.yml
-         - <isn>-evpn.conf
-    """
     print("\n" + "═" * 60)
     print("  CONFIGURATION ISN (Inter-Site Network)")
     print("═" * 60)
 
-    # ── Lire les vars des DCs ─────────────────────────────────────────────────
     print("\n-- Fichiers vars des DCs --\n")
     dc_vars_list = []
     dc_idx = 1
@@ -521,9 +622,7 @@ def mode_isn():
         print("  Au moins 2 DCs requis.")
         raise SystemExit(1)
 
-    # ── Scan + decouverte LLDP ISN ────────────────────────────────────────────
     print("\n-- Decouverte ISN --\n")
-
     while True:
         isn_range = input("  Range IP mgmt ISN (ex: 192.168.28.36-37) : ").strip()
         if isn_range:
@@ -559,13 +658,9 @@ def mode_isn():
         print("  Aucun ISN accessible.")
         raise SystemExit(1)
 
-    # ── Saisie des variables reseau pour chaque ISN ───────────────────────────
     print("\n-- Variables reseau ISN --\n")
-    print("  (Entree = valeur par defaut entre [])\n")
-
     isn_asn = ask_int("  ASN ISN (meme pour tous)", example=65100)
 
-    # Reseau inter-ISN (entre dc1-isn-1 et dc2-isn-2)
     isn_inter_net = None
     if len(isn_devices) > 1:
         print("\n  Reseau inter-ISN (lien entre les ISN) :")
@@ -577,32 +672,25 @@ def mode_isn():
     for idx, dev in enumerate(isn_devices):
         hostname = dev["hostname"]
         print(f"\n  ── {hostname.upper()} ──")
-        lb0 = ask_input(f"loopback0_ip", example=f"172.16.100.{idx + 1}")
+        # ── OBLIGATOIRE : loopback0 ISN ───────────────────────────────────────
+        lb0 = ask_input_required(
+            f"loopback0_ip de {hostname}",
+            example=f"172.16.100.{idx + 1}"
+        )
         isn_vars[hostname] = {
             "loopback0_ip": lb0,
             "bgp_asn":      isn_asn,
             "mgmt_ip":      dev["ip"],
         }
-        # IP inter-ISN
         if isn_inter_net and len(isn_devices) > 1:
             isn_vars[hostname]["inter_isn_ip"]     = str(isn_inter_net[idx])
             isn_vars[hostname]["inter_isn_prefix"]  = isn_inter_net.prefixlen
 
-    # ── Croisement avec les border leafs ─────────────────────────────────────
     print("\n  Croisement avec les border leafs des DCs...")
 
-    # Construire la liste de tous les voisins border leaf
-    # Pour l'ASN du leaf : lire depuis inventories/<dc>/host_vars/<leaf>.yml
-    # qui est genere par generate_vars_auto.py avec le vrai ASN calcule
     import yaml
 
     def get_leaf_asn(dc_name: str, leaf_name: str, leaf_data: dict) -> int:
-        """
-        Lit le vrai ASN du leaf depuis :
-        1. inventories/<dc>/host_vars/<leaf>.yml (genere par generate_vars_auto)
-        2. Fallback : recalcule depuis asn_leafs_base + paire MLAG
-        """
-        # Option 1 : lire depuis host_vars genere
         hv_path = os.path.join("inventories", dc_name, "host_vars", f"{leaf_name}.yml")
         if os.path.exists(hv_path):
             try:
@@ -612,23 +700,17 @@ def mode_isn():
                     return hv["bgp_asn"]
             except Exception:
                 pass
-
-        # Option 2 : recalculer depuis vars_auto_dcX.json
-        # Trouver le dc_vars correspondant
         for dc_vars in dc_vars_list:
             if dc_vars.get("dc_name") == dc_name:
                 fab      = dc_vars.get("fabric", {})
                 asn_base = fab.get("asn_leafs_base", 65001)
-                # host_id = dernier groupe de chiffres
                 nums     = re.findall(r"\d+", leaf_name)
                 leaf_idx = int(nums[-1]) if nums else 1
                 pair     = (leaf_idx - 1) // 2
                 return asn_base + pair
-
-        return 65000  # dernier fallback
+        return 65000
 
     def get_leaf_loopback0(dc_name: str, leaf_name: str) -> str:
-        """Lit la loopback0 du leaf depuis inventories/<dc>/host_vars/<leaf>.yml"""
         hv_path = os.path.join("inventories", dc_name, "host_vars", f"{leaf_name}.yml")
         if os.path.exists(hv_path):
             try:
@@ -662,12 +744,10 @@ def mode_isn():
                     "rt_export":      dci_link["rt_export"],
                 })
 
-    # Pour chaque ISN, filtrer ses voisins directs via LLDP
-    # Et stocker la loopback0 ISN dans chaque neighbor pour le peering loopback
     for dev in isn_devices:
-        hostname    = dev["hostname"]
-        isn_lb0     = isn_vars[hostname]["loopback0_ip"]
-        lldp_hosts  = {
+        hostname   = dev["hostname"]
+        isn_lb0    = isn_vars[hostname]["loopback0_ip"]
+        lldp_hosts = {
             re.sub(r"[-_]", "", nbr["remote_hostname"].lower()): nbr["local_eth"]
             for nbr in dev["neighbors"]
         }
@@ -676,16 +756,15 @@ def mode_isn():
             leaf_clean = re.sub(r"[-_]", "", nbr["leaf_name"].lower())
             if leaf_clean in lldp_hosts:
                 eth = lldp_hosts[leaf_clean]
-                my_neighbors.append({
-                    **nbr,
-                    "isn_eth":       eth,
-                    "isn_loopback0": isn_lb0,
-                })
-                print(f"  {hostname} Eth{eth} -> {nbr['leaf_name']} ({nbr['dc']})  leaf-LB0={nbr.get('leaf_loopback0', '?')}  isn-LB0={isn_lb0}")
+                my_neighbors.append({**nbr, "isn_eth": eth, "isn_loopback0": isn_lb0})
+                print(f"  {hostname} Eth{eth} -> {nbr['leaf_name']} ({nbr['dc']})  "
+                      f"leaf-LB0={nbr.get('leaf_loopback0','?')}  isn-LB0={isn_lb0}")
 
         isn_vars[hostname]["neighbors"] = my_neighbors
 
-    # ── Mettre a jour vars_auto_dcX.json avec isn_loopback0 dans dci_links ─────
+    # ── Mise a jour vars DC avec isn_loopback0 ────────────────────────────────
+    # Ecrase toujours isn_loopback0 si vide ou absent
+    # → garantit que les BL sont regeneres avec le peering EVPN complet
     print("\n  Mise a jour des vars DC avec loopbacks ISN...")
     for dc_vars in dc_vars_list:
         dc_name  = dc_vars.get("dc_name", "dc?")
@@ -694,28 +773,36 @@ def mode_isn():
             if not leaf_data.get("is_border_leaf", False):
                 continue
             for dci_link in leaf_data.get("dci_links", []):
+                existing = dci_link.get("isn_loopback0", "")
+                if existing and existing != "":
+                    # Loopback deja presente et non vide → conserver
+                    print(f"  {leaf_name} ({dc_name}) : isn_loopback0={existing} deja present, conserve")
+                    continue
+                # Absent ou vide → chercher dans les neighbors ISN et ecraser
                 for dev in isn_devices:
                     isn_lb0 = isn_vars[dev["hostname"]]["loopback0_ip"]
                     for nbr in isn_vars[dev["hostname"]].get("neighbors", []):
                         if nbr["leaf_name"] == leaf_name and nbr["dc"] == dc_name:
                             dci_link["isn_loopback0"] = isn_lb0
                             modified = True
-                            print(f"  {leaf_name} ({dc_name}) dci_link -> isn_loopback0={isn_lb0}")
+                            print(f"  {leaf_name} ({dc_name}) -> isn_loopback0={isn_lb0} (mis a jour)")
 
         if modified:
             dc_file = f"vars_auto_{dc_name}.json"
             with open(dc_file, "w") as f:
                 json.dump(dc_vars, f, indent=2)
             print(f"  OK  {dc_file} mis a jour")
+            # Regenere les inventories DC → BL obtiennent ISN-EVPN complet
             run_generation(dc_vars, dc_name=dc_name)
-            print(f"  OK  inventories/{dc_name}/ regenere")
+            print(f"  OK  inventories/{dc_name}/ regenere avec peering EVPN ISN")
+        else:
+            print(f"  {dc_name} : isn_loopback0 deja presents, pas de mise a jour")
 
-    # ── Construire vars_auto_isn.json ─────────────────────────────────────────
     vars_isn = {
-        "dc_name":    "isn",
-        "isn_asn":    isn_asn,
-        "isn_all":    isn_devices,
-        "isn_vars":   isn_vars,
+        "dc_name":  "isn",
+        "isn_asn":  isn_asn,
+        "isn_all":  isn_devices,
+        "isn_vars": isn_vars,
         "inventory": {
             "arista_vars": {
                 "ansible_user":                   isn_username,
@@ -727,10 +814,7 @@ def mode_isn():
                 "ansible_httpapi_port":           443,
             },
             "isn_devices": {
-                dev["hostname"]: {
-                    "ansible_host": dev["ip"],
-                    "mgmt_ip":      dev["ip"],
-                }
+                dev["hostname"]: {"ansible_host": dev["ip"], "mgmt_ip": dev["ip"]}
                 for dev in isn_devices
             },
         },
@@ -740,34 +824,30 @@ def mode_isn():
         json.dump(vars_isn, f, indent=2)
     print(f"\n  OK  vars_auto_isn.json sauvegarde.")
 
-    # ── Generer les fichiers Ansible ISN ─────────────────────────────────────
     generate_isn_files(vars_isn, isn_devices, isn_inter_net)
 
-    print("\n  ISN configure ! Deployez avec : ./run.sh evpn isn")
+    print("\n" + "═" * 60)
+    print("  ISN configure ! Ordre de deploiement :")
+    print("    1. ./run.sh evpn dc1   (BL avec peering EVPN ISN complet)")
+    print("    2. ./run.sh evpn dc2")
+    print("    3. ./run.sh evpn isn")
+    print("═" * 60)
 
 
 def generate_isn_files(vars_isn: dict, isn_devices: list, isn_inter_net):
-    """
-    Genere la meme structure qu'un DC normal :
-      inventories/isn/
-        hosts
-        group_vars/all/bgp.yml
-        group_vars/all/isn_global.yml
-        host_vars/<isn>.yml
-        <isn>-evpn.conf
-    """
+    import yaml
+
     output_base = os.path.join("inventories", "isn")
     group_vars  = os.path.join(output_base, "group_vars", "all")
     host_vars   = os.path.join(output_base, "host_vars")
     os.makedirs(group_vars, exist_ok=True)
     os.makedirs(host_vars,  exist_ok=True)
 
-    av          = vars_isn["inventory"]["arista_vars"]
+    av              = vars_isn["inventory"]["arista_vars"]
     isn_devices_inv = vars_isn["inventory"]["isn_devices"]
-    isn_asn     = vars_isn["isn_asn"]
-    isn_vars    = vars_isn["isn_vars"]
+    isn_asn         = vars_isn["isn_asn"]
+    isn_vars        = vars_isn["isn_vars"]
 
-    # ── hosts ────────────────────────────────────────────────────────────────
     lines = ["[isn_devices]"]
     for hostname, data in sorted(isn_devices_inv.items()):
         lines.append(f"{hostname} ansible_host={data['ansible_host']} mgmt_ip={data['mgmt_ip']}")
@@ -778,25 +858,17 @@ def generate_isn_files(vars_isn: dict, isn_devices: list, isn_inter_net):
         f.write("\n".join(lines) + "\n")
     print(f"  OK  {output_base}/hosts")
 
-    # ── group_vars/all/isn_global.yml ─────────────────────────────────────────
-    import yaml
-    global_vars = {
-        "isn_asn": isn_asn,
-        "isn_routing_protocol": "multi-agent",
-    }
+    global_vars = {"isn_asn": isn_asn, "isn_routing_protocol": "multi-agent"}
     with open(os.path.join(group_vars, "isn_global.yml"), "w") as f:
         f.write("# ISN - Variables globales\n\n")
         yaml.dump(global_vars, f, default_flow_style=False, sort_keys=False)
     print(f"  OK  {group_vars}/isn_global.yml")
 
-    # ── host_vars/<isn>.yml + <isn>-evpn.conf ─────────────────────────────────
     for dev in isn_devices:
         hostname = dev["hostname"]
         ivars    = isn_vars.get(hostname, {})
 
-        # host_vars
-        # Trouver le port vers l'ISN distant via LLDP
-        other_isns  = [d for d in isn_devices if d["hostname"] != hostname]
+        other_isns    = [d for d in isn_devices if d["hostname"] != hostname]
         inter_isn_eth = None
         for nbr in dev["neighbors"]:
             nbr_clean = re.sub(r"[-_]", "", nbr["remote_hostname"].lower())
@@ -819,16 +891,11 @@ def generate_isn_files(vars_isn: dict, isn_devices: list, isn_inter_net):
         with open(os.path.join(host_vars, f"{hostname}.yml"), "w") as f:
             f.write(f"# Variables specifiques a {hostname}\n\n")
             yaml.dump(hv, f, default_flow_style=False, sort_keys=False)
+
         print(f"  OK  {host_vars}/{hostname}.yml")
-
-
-
-        router_id = ivars.get("loopback0_ip", dev["ip"])
-        neighbors = ivars.get("neighbors", [])
-        print(f"  OK  {host_vars}/{hostname}.yml")
-        print(f"      loopback0_ip : {router_id}")
+        print(f"      loopback0_ip : {hv['loopback0_ip']}")
         print(f"      bgp_asn      : {isn_asn}")
-        print(f"      neighbors    : {len(neighbors)} border leaf(s)")
+        print(f"      neighbors    : {len(hv['neighbors'])} border leaf(s)")
 
 # ─── MODES ────────────────────────────────────────────────────────────────────
 
@@ -859,7 +926,20 @@ def mode_full():
 
     existing_vlan_registry = load_existing_dc_ips()
 
-    vars_auto = ask_svis(vars_auto, vlan_registry=existing_vlan_registry)
+    print("\n-- Coherence VNI inter-DC --\n")
+    vni_registry, existing_vrf_vni = load_vni_registry()
+
+    if existing_vrf_vni:
+        print(f"\n  VNI L3 VRF existant : {existing_vrf_vni} -> reutilise.")
+        vars_auto["fabric"]["vrf_vni"] = existing_vrf_vni
+    else:
+        vrf_vni = ask_int("  VNI L3 VRF customer (identique sur tous les DCs)", example=1001)
+        vars_auto["fabric"]["vrf_vni"] = vrf_vni
+
+    vars_auto = ask_svis(vars_auto,
+                         vlan_registry=existing_vlan_registry,
+                         vni_registry=vni_registry,
+                         vni_base=vars_auto.get("fabric", {}).get("vni_base", 10000))
     vars_auto = ask_dci_config(vars_auto)
     vars_auto = ask_hosts_config(vars_auto)
 

@@ -13,89 +13,71 @@ interconnects:
   leaf: 1
   spine_name: dc2-spine-1
   leaf_name: dc2-leaf-1
-  network: 20.0.0.0/31
-  spine_ip: 20.0.0.0
-  leaf_ip: 20.0.0.1
-  spine_eth: 3
-  leaf_eth: 1
-- spine: 1
-  leaf: 1
-  spine_name: dc2-spine-1
-  leaf_name: dc2-leaf-1
-  network: 20.0.0.2/31
-  spine_ip: 20.0.0.2
-  leaf_ip: 20.0.0.3
+  network: 172.16.100.0/31
+  spine_ip: 172.16.100.0
+  leaf_ip: 172.16.100.1
   spine_eth: 6
   leaf_eth: 1
 - spine: 1
   leaf: 2
   spine_name: dc2-spine-1
   leaf_name: dc2-leaf-2
-  network: 20.0.0.4/31
-  spine_ip: 20.0.0.4
-  leaf_ip: 20.0.0.5
-  spine_eth: 4
-  leaf_eth: 1
-- spine: 1
-  leaf: 2
-  spine_name: dc2-spine-1
-  leaf_name: dc2-leaf-2
-  network: 20.0.0.6/31
-  spine_ip: 20.0.0.6
-  leaf_ip: 20.0.0.7
+  network: 172.16.100.2/31
+  spine_ip: 172.16.100.2
+  leaf_ip: 172.16.100.3
   spine_eth: 5
   leaf_eth: 1
 - spine: 1
   leaf: 3
   spine_name: dc2-spine-1
   leaf_name: dc2-leaf-3
-  network: 20.0.0.8/31
-  spine_ip: 20.0.0.8
-  leaf_ip: 20.0.0.9
+  network: 172.16.100.4/31
+  spine_ip: 172.16.100.4
+  leaf_ip: 172.16.100.5
   spine_eth: 1
   leaf_eth: 1
 - spine: 1
   leaf: 4
   spine_name: dc2-spine-1
   leaf_name: dc2-leaf-4
-  network: 20.0.0.10/31
-  spine_ip: 20.0.0.10
-  leaf_ip: 20.0.0.11
+  network: 172.16.100.6/31
+  spine_ip: 172.16.100.6
+  leaf_ip: 172.16.100.7
   spine_eth: 2
   leaf_eth: 1
 - spine: 2
   leaf: 1
   spine_name: dc2-spine-2
   leaf_name: dc2-leaf-1
-  network: 20.0.0.12/31
-  spine_ip: 20.0.0.12
-  leaf_ip: 20.0.0.13
+  network: 172.16.100.8/31
+  spine_ip: 172.16.100.8
+  leaf_ip: 172.16.100.9
   spine_eth: 6
   leaf_eth: 2
 - spine: 2
   leaf: 2
   spine_name: dc2-spine-2
   leaf_name: dc2-leaf-2
-  network: 20.0.0.14/31
-  spine_ip: 20.0.0.14
-  leaf_ip: 20.0.0.15
+  network: 172.16.100.10/31
+  spine_ip: 172.16.100.10
+  leaf_ip: 172.16.100.11
   spine_eth: 5
   leaf_eth: 2
 - spine: 2
   leaf: 3
   spine_name: dc2-spine-2
   leaf_name: dc2-leaf-3
-  network: 20.0.0.16/31
-  spine_ip: 20.0.0.16
-  leaf_ip: 20.0.0.17
+  network: 172.16.100.12/31
+  spine_ip: 172.16.100.12
+  leaf_ip: 172.16.100.13
   spine_eth: 1
   leaf_eth: 2
 - spine: 2
   leaf: 4
   spine_name: dc2-spine-2
   leaf_name: dc2-leaf-4
-  network: 20.0.0.18/31
-  spine_ip: 20.0.0.18
-  leaf_ip: 20.0.0.19
+  network: 172.16.100.14/31
+  spine_ip: 172.16.100.14
+  leaf_ip: 172.16.100.15
   spine_eth: 2
   leaf_eth: 2

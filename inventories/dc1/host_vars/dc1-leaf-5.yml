@@ -16,11 +16,11 @@ is_border_leaf: true
 dci_links:
 - eth: 5
   neighbor: dc1-isn-1
-  local_ip: 10.0.0.24
-  remote_ip: 10.0.0.25
+  local_ip: 172.16.200.24
+  remote_ip: 172.16.200.25
   prefix: 31
   remote_asn: 65100
   rt_import: 1:9999
   rt_export: 1:9999
-  vni_l3: 5001
+  vni_l3: 1001
   isn_loopback0: 172.16.100.1

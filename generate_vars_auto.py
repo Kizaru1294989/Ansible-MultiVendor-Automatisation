@@ -60,6 +60,19 @@ def svi_network(ip: str, prefix: int) -> str:
     net = ipaddress.ip_network(f"{ip}/{prefix}", strict=False)
     return str(net)
 
+def clean_dci_links(dci_links: list) -> list:
+    """
+    Nettoie les dci_links avant ecriture dans host_vars :
+    - Supprime les cles dont la valeur est None ou chaine vide ''
+    - Evite que isn_loopback0: '' soit ecrit dans le YAML
+      ce qui ferait generer un peer group BGP incomplet dans le J2
+    """
+    cleaned = []
+    for link in dci_links:
+        clean_link = {k: v for k, v in link.items() if v is not None and v != ""}
+        cleaned.append(clean_link)
+    return cleaned
+
 # ─── CALCUL bgp_networks ──────────────────────────────────────────────────────
 
 def compute_bgp_networks(svis: list, loopback0_ip: str) -> list:
@@ -82,7 +95,10 @@ def enrich_svis(svis: list, vni_base: int) -> list:
     enriched = []
     for svi in svis:
         s = dict(svi)
-        s["vni"] = vni_base + s["vlan_id"]
+        # Utilise le VNI deja present dans le JSON si disponible (coherence inter-DC)
+        # Sinon calcule depuis vni_base + vlan_id
+        if "vni" not in s or not s["vni"]:
+            s["vni"] = vni_base + s["vlan_id"]
         enriched.append(s)
     return enriched
 
@@ -126,7 +142,6 @@ def compute_all(data: dict) -> dict:
     base_int = int(ipaddress.ip_network(fab["interconnect_base"], strict=False).network_address)
     step     = 2 ** (32 - prefix)
 
-    # Index id -> hostname reel
     spine_id_to_name = {host_id(n): n for n in spines_inv}
     leaf_id_to_name  = {host_id(n): n for n in leafs_inv}
 
@@ -187,7 +202,8 @@ def compute_all(data: dict) -> dict:
         bgp_networks = compute_bgp_networks(svis, loopback0)
 
         is_border = inv_data.get("is_border_leaf", False)
-        dci_links = inv_data.get("dci_links", [])
+        # ── Nettoyage dci_links : supprime les valeurs vides (ex: isn_loopback0: '')
+        dci_links = clean_dci_links(inv_data.get("dci_links", []))
 
         computed_leafs[name] = {
             "loopback0_ip":        loopback0,
@@ -288,8 +304,6 @@ def generate_hosts_file(data: dict, output_base: str):
             lines.append(f"{hostname} ansible_host={hvars['ansible_host']} mgmt_ip={hvars['mgmt_ip']}")
         lines.append("")
 
-    # On garde toujours "arista" comme groupe parent
-    # pour la compatibilite avec les playbooks existants
     lines.append("[arista:children]")
     for group_name in groups:
         lines.append(group_name)
@@ -314,14 +328,12 @@ def run_generation(vars_auto: dict = None, dc_name: str = None):
     if vars_auto is None:
         vars_file = f"vars_auto_{dc_name}.json" if dc_name else VARS_FILE
         if not os.path.exists(vars_file):
-            # Fallback sur vars_auto.json
             vars_file = VARS_FILE
         if not os.path.exists(vars_file):
             print(f"Fichier introuvable : {vars_file}")
             raise SystemExit(1)
         vars_auto = load_vars(vars_file)
 
-    # Determiner le nom du DC
     if dc_name is None:
         dc_name = vars_auto.get("dc_name", "production")
 

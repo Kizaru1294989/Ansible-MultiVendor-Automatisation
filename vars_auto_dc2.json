@@ -1,20 +1,21 @@
 {
   "fabric": {
-    "loopback0_base": "172.16.0.0/24",
-    "loopback1_base": "1.1.2.0/24",
-    "loopback_test_base": "10.10.10.0/24",
-    "mlag_spine_base": "172.16.5.0/31",
-    "mlag_leaf_base": "100.0.0.0/24",
-    "interconnect_base": "172.16.200.0/24",
+    "loopback0_base": "172.32.0.0/24",
+    "loopback1_base": "2.2.1.0/24",
+    "loopback_test_base": "20.20.20.0/24",
+    "mlag_spine_base": "172.16.10.0/31",
+    "mlag_leaf_base": "200.0.0.0/24",
+    "interconnect_base": "172.16.100.0/24",
     "interconnect_prefix": 31,
-    "asn_spines": 65000,
-    "asn_leafs_base": 65001,
-    "vni_base": 10000,
+    "asn_spines": 64000,
+    "asn_leafs_base": 64001,
+    "vni_base": 20000,
     "route_distinguisher_base": 1000,
     "loopback_test_id": 100,
     "virtual_router_mac_base": "00:1c:73:00:00:",
     "bgp_max_paths": 4,
-    "bgp_max_routes": 12000
+    "bgp_max_routes": 12000,
+    "vrf_vni": 1001
   },
   "mlag": {
     "mgmt_gateway": "192.168.28.254",
@@ -60,18 +61,35 @@
             "eth": 5,
             "neighbor": "linux-server-5",
             "type": "unknown"
-          }
-        ],
-        "is_border_leaf": true,
-        "dci_links": [],
-        "lldp_dci_ports": [
+          },
           {
             "eth": 5,
             "neighbor": "linux-server-5",
-            "neighbor_mac": "0050.0000.1300"
+            "neighbor_mac": "0050.0000.1300",
+            "type": "unknown"
           }
         ],
-        "svis": []
+        "is_border_leaf": false,
+        "dci_links": [],
+        "lldp_dci_ports": [],
+        "svis": [
+          {
+            "vlan_id": 115,
+            "ip": "172.16.115.6",
+            "prefix": 24,
+            "virtual_ip": "172.16.115.1",
+            "eth_int_host": 5,
+            "vni": 10115
+          },
+          {
+            "vlan_id": 116,
+            "ip": "172.16.116.6",
+            "prefix": 24,
+            "virtual_ip": "172.16.116.1",
+            "eth_int_host": 6,
+            "vni": 10116
+          }
+        ]
       },
       "dc2-leaf-2": {
         "ansible_host": "192.168.28.31",
@@ -81,18 +99,35 @@
             "eth": 5,
             "neighbor": "linux-server-5",
             "type": "unknown"
-          }
-        ],
-        "is_border_leaf": true,
-        "dci_links": [],
-        "lldp_dci_ports": [
+          },
           {
             "eth": 5,
             "neighbor": "linux-server-5",
-            "neighbor_mac": "0050.0000.1300"
+            "neighbor_mac": "0050.0000.1300",
+            "type": "unknown"
           }
         ],
-        "svis": []
+        "is_border_leaf": false,
+        "dci_links": [],
+        "lldp_dci_ports": [],
+        "svis": [
+          {
+            "vlan_id": 115,
+            "ip": "172.16.115.7",
+            "prefix": 24,
+            "virtual_ip": "172.16.115.1",
+            "eth_int_host": 5,
+            "vni": 10115
+          },
+          {
+            "vlan_id": 116,
+            "ip": "172.16.116.7",
+            "prefix": 24,
+            "virtual_ip": "172.16.116.1",
+            "eth_int_host": 6,
+            "vni": 10116
+          }
+        ]
       },
       "dc2-leaf-3": {
         "ansible_host": "192.168.28.32",
@@ -105,7 +140,20 @@
           }
         ],
         "is_border_leaf": true,
-        "dci_links": [],
+        "dci_links": [
+          {
+            "eth": 5,
+            "neighbor": "dc2-isn-2",
+            "local_ip": "172.16.100.16",
+            "remote_ip": "172.16.100.17",
+            "prefix": 31,
+            "remote_asn": 65100,
+            "rt_import": "1:9999",
+            "rt_export": "1:9999",
+            "vni_l3": 1001,
+            "isn_loopback0": "172.16.100.2"
+          }
+        ],
         "lldp_dci_ports": [
           {
             "eth": 5,
@@ -113,7 +161,8 @@
             "neighbor_mac": "5000.0042.0717"
           }
         ],
-        "svis": []
+        "svis": [],
+        "border_has_svis": false
       },
       "dc2-leaf-4": {
         "ansible_host": "192.168.28.33",
@@ -126,7 +175,20 @@
           }
         ],
         "is_border_leaf": true,
-        "dci_links": [],
+        "dci_links": [
+          {
+            "eth": 5,
+            "neighbor": "dc2-isn-2",
+            "local_ip": "172.16.100.18",
+            "remote_ip": "172.16.100.19",
+            "prefix": 31,
+            "remote_asn": 65100,
+            "rt_import": "1:9999",
+            "rt_export": "1:9999",
+            "vni_l3": 1001,
+            "isn_loopback0": "172.16.100.2"
+          }
+        ],
         "lldp_dci_ports": [
           {
             "eth": 5,
@@ -134,7 +196,8 @@
             "neighbor_mac": "5000.0042.0717"
           }
         ],
-        "svis": []
+        "svis": [],
+        "border_has_svis": false
       }
     },
     "hosts": {}
@@ -188,5 +251,6 @@
       "spine_eth": 2,
       "leaf_eth": 2
     }
-  ]
+  ],
+  "dc_name": "dc2"
 }

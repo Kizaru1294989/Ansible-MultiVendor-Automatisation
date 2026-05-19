@@ -15,13 +15,13 @@ bgp_networks:
 - 172.16.0.13/32
 svis:
 - vlan_id: 115
-  ip: 172.16.115.12
+  ip: 172.16.115.4
   prefix: 24
   virtual_ip: 172.16.115.1
   eth_int_host: 6
   vni: 10115
 - vlan_id: 116
-  ip: 172.16.116.12
+  ip: 172.16.116.4
   prefix: 24
   virtual_ip: 172.16.116.1
   eth_int_host: 7

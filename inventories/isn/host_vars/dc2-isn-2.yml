@@ -7,9 +7,9 @@ neighbors:
 - dc: dc2
   leaf_name: dc2-leaf-3
   leaf_asn: 64002
-  leaf_loopback0: 172.24.0.13
-  isn_local_ip: 20.0.0.21
-  leaf_ip: 20.0.0.20
+  leaf_loopback0: 172.32.0.13
+  isn_local_ip: 172.16.100.17
+  leaf_ip: 172.16.100.16
   prefix: 31
   rt_import: 1:9999
   rt_export: 1:9999
@@ -18,9 +18,9 @@ neighbors:
 - dc: dc2
   leaf_name: dc2-leaf-4
   leaf_asn: 64002
-  leaf_loopback0: 172.24.0.14
-  isn_local_ip: 20.0.0.23
-  leaf_ip: 20.0.0.22
+  leaf_loopback0: 172.32.0.14
+  isn_local_ip: 172.16.100.19
+  leaf_ip: 172.16.100.18
   prefix: 31
   rt_import: 1:9999
   rt_export: 1:9999
