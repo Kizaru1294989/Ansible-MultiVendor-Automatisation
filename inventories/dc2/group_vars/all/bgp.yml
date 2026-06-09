@@ -2,12 +2,12 @@
 
 bgp_max_paths: 4
 bgp_max_routes: 12000
-bgp_asn_spines: 64000
+bgp_asn_spines: 66000
 leafs_asn:
-  1: 64001
-  2: 64001
-  3: 64002
-  4: 64002
+  1: 66001
+  2: 66001
+  3: 66002
+  4: 66002
 interconnects:
 - spine: 1
   leaf: 1

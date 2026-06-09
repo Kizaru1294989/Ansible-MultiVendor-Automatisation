@@ -1,14 +1,14 @@
 # Variables specifiques a dc2-leaf-2 (generees automatiquement)
 
 loopback0_ip: 172.32.0.12
-bgp_asn: 64001
+bgp_asn: 66001
 mlag_ip: 200.0.0.1
 mlag_peer_ip: 200.0.0.0
 virtual_router_mac: 00:1c:73:00:00:0c
 loopback1_ip: 2.2.1.1
 loopback_test_id: 100
 loopback_test_ip: 20.20.20.20
-route_distinguisher: 1000
+route_distinguisher: 2000
 bgp_networks:
 - 172.16.115.0/24
 - 172.16.116.0/24

@@ -1,6 +1,6 @@
 # Variables specifiques a dc2-spine-2 (generees automatiquement)
 
 loopback0_ip: 172.32.0.2
-bgp_asn: 64000
+bgp_asn: 66000
 mlag_ip: 172.16.10.1
 mlag_peer_ip: 172.16.10.0
