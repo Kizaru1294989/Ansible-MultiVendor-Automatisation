@@ -1,7 +1,7 @@
 # Variables specifiques a dc2-leaf-4 (generees automatiquement)
 
-loopback0_ip: 172.32.0.14
-bgp_asn: 66002
+loopback0_ip: 172.20.0.14
+bgp_asn: 65002
 mlag_ip: 200.0.0.3
 mlag_peer_ip: 200.0.0.2
 virtual_router_mac: 00:1c:73:00:00:18
@@ -10,14 +10,14 @@ loopback_test_id: 100
 loopback_test_ip: 20.20.20.40
 route_distinguisher: 3000
 bgp_networks:
-- 172.32.0.14/32
+- 172.20.0.14/32
 svis: []
 is_border_leaf: true
 dci_links:
 - eth: 5
   neighbor: dc2-isn-2
-  local_ip: 172.16.100.18
-  remote_ip: 172.16.100.19
+  local_ip: 20.0.0.18
+  remote_ip: 20.0.0.19
   prefix: 31
   remote_asn: 65100
   rt_import: 1:9999

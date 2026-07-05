@@ -6,25 +6,14 @@ mgmt_ip: 192.168.28.37
 neighbors:
 - dc: dc1
   leaf_name: dc1-leaf-5
-  leaf_asn: 65003
-  leaf_loopback0: 172.16.0.15
-  isn_local_ip: 172.16.200.25
-  leaf_ip: 172.16.200.24
+  leaf_asn: 64003
+  leaf_loopback0: 172.10.0.15
+  isn_local_ip: 10.0.0.21
+  leaf_ip: 10.0.0.20
   prefix: 31
   rt_import: 1:9999
   rt_export: 1:9999
   isn_eth: 3
-  isn_loopback0: 172.16.100.1
-- dc: dc1
-  leaf_name: dc1-leaf-6
-  leaf_asn: 65003
-  leaf_loopback0: 172.16.0.16
-  isn_local_ip: 172.16.200.27
-  leaf_ip: 172.16.200.26
-  prefix: 31
-  rt_import: 1:9999
-  rt_export: 1:9999
-  isn_eth: 2
   isn_loopback0: 172.16.100.1
 inter_isn_ip: 172.16.250.0
 inter_isn_prefix: 31

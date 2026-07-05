@@ -163,7 +163,7 @@ def ask_discovery_params() -> tuple:
         dc_name = dc_name if dc_name else "production"
         break
     while True:
-        ip_range = input("  Range IP mgmt (ex: 192.168.28.1-50) : ").strip()
+        ip_range = input("  Range IP mgmt (ex: 192.168.28.20-29) : ").strip()
         if ip_range:
             break
     while True:
@@ -624,7 +624,7 @@ def mode_isn():
 
     print("\n-- Decouverte ISN --\n")
     while True:
-        isn_range = input("  Range IP mgmt ISN (ex: 192.168.28.36-37) : ").strip()
+        isn_range = input("  Range IP mgmt ISN (ex: 192.168.28.37-38) : ").strip()
         if isn_range:
             break
     while True:

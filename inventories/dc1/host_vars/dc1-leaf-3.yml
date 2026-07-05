@@ -1,7 +1,7 @@
 # Variables specifiques a dc1-leaf-3 (generees automatiquement)
 
 loopback0_ip: 172.16.0.13
-bgp_asn: 65002
+bgp_asn: 64002
 mlag_ip: 100.0.0.2
 mlag_peer_ip: 100.0.0.3
 virtual_router_mac: 00:1c:73:00:00:18

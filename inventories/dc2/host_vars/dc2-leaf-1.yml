@@ -1,7 +1,7 @@
 # Variables specifiques a dc2-leaf-1 (generees automatiquement)
 
-loopback0_ip: 172.32.0.11
-bgp_asn: 66001
+loopback0_ip: 172.20.0.11
+bgp_asn: 65001
 mlag_ip: 200.0.0.0
 mlag_peer_ip: 200.0.0.1
 virtual_router_mac: 00:1c:73:00:00:0c
@@ -12,16 +12,16 @@ route_distinguisher: 2000
 bgp_networks:
 - 172.16.115.0/24
 - 172.16.116.0/24
-- 172.32.0.11/32
+- 172.20.0.11/32
 svis:
 - vlan_id: 115
-  ip: 172.16.115.6
+  ip: 172.16.115.8
   prefix: 24
   virtual_ip: 172.16.115.1
   eth_int_host: 5
   vni: 10115
 - vlan_id: 116
-  ip: 172.16.116.6
+  ip: 172.16.116.8
   prefix: 24
   virtual_ip: 172.16.116.1
   eth_int_host: 6
