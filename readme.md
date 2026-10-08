@@ -42,7 +42,7 @@ One typo and an entire tenant goes dark.
 
 ## 🗺️ Target topology
 
-![Multi-DC VXLAN EVPN topology](docs/topology.png)
+![Multi-DC VXLAN EVPN topology](docs/DC-EVE.png)
 
 Two datacenters, each built as a **Spine/Leaf fabric** with **MLAG leaf pairs**, **border leaves** and an **ISN** (Inter-Site Network) carrying EVPN between sites.
 
@@ -56,7 +56,7 @@ Two datacenters, each built as a **Spine/Leaf fabric** with **MLAG leaf pairs**,
 
 ## 🏗️ Architecture
 
-![Project architecture](docs/architecture.png)
+![Project architecture](docs/diagram.png)
 
 ---
 
